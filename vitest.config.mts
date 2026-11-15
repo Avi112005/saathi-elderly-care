@@ -1,6 +1,13 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
+/**
+ * Tests use a throwaway SQLite file by default. Set TEST_DATABASE_URL to a PostgreSQL
+ * URL to run the same suite against Postgres; each run gets its own fresh schema.
+ */
+const pgBase = process.env.TEST_DATABASE_URL;
+const testDatabaseUrl = pgBase ? `${pgBase}${pgBase.includes("?") ? "&" : "?"}schema=test_${Date.now()}` : "file:./test.db";
+
 export default defineConfig({
   resolve: {
     alias: {
@@ -16,7 +23,7 @@ export default defineConfig({
     include: ["tests/unit/**/*.test.{ts,tsx}", "tests/integration/**/*.test.ts"],
     globalSetup: ["tests/global-setup.ts"],
     setupFiles: ["tests/setup.ts"],
-    env: { DATABASE_URL: "file:./test.db", APP_URL: "http://localhost:3000", NODE_ENV: "test" },
+    env: { DATABASE_URL: testDatabaseUrl, APP_URL: "http://localhost:3000", NODE_ENV: "test" },
     // Integration tests share one SQLite file, so files run one after another.
     fileParallelism: false,
     coverage: {

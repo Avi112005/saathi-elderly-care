@@ -184,10 +184,12 @@ Coverage thresholds are enforced in CI (`vitest.config.mts`): 90 % of lines for 
 
 ## Deployment
 
-* **Docker / VPS / Render / Railway / Fly**: `docker build -t saathi . && docker run -p 3000:3000 -v saathi-data:/data --env-file .env saathi` — the scheduler runs in-process.
-* **PostgreSQL**: change `provider` in `prisma/schema.prisma` to `postgresql` and set `DATABASE_URL`.
-* **Vercel / serverless**: use PostgreSQL, set `REMINDER_SCHEDULER=off`, and point a cron at `POST /api/cron/reminders`.
-* Don't run `npm run db:seed` against production — it only creates the sample demo circle.
+**Recommended: Vercel + Supabase** — step-by-step guide in **[docs/DEPLOY.md](docs/DEPLOY.md)** (about 15 minutes, free tiers).
+
+* **Vercel** hosts the app; **Supabase** hosts PostgreSQL and calls the reminder engine every minute with `pg_cron`.
+* One schema, two databases: `prisma/schema.prisma` is the source of truth; `scripts/prisma.mjs` switches to PostgreSQL whenever `DATABASE_URL` is a `postgres://` URL. Local development and tests stay on zero-setup SQLite, and **CI runs the whole suite on both SQLite and PostgreSQL**.
+* Tables live in a dedicated `saathi` schema, so Supabase's public REST API never exposes health data.
+* **Docker / VPS** alternative: `docker build -t saathi . && docker run -p 3000:3000 -v saathi-data:/data --env-file .env saathi` — the reminder timer runs in-process.
 
 Environment variables are documented in [.env.example](.env.example).
 

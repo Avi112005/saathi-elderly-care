@@ -20,4 +20,4 @@ USER saathi
 ENV DATABASE_URL="file:/data/saathi.db"
 EXPOSE 3000
 # Create/upgrade the schema on boot, then serve. The reminder scheduler runs in-process.
-CMD ["sh", "-c", "npx prisma db push --skip-generate && npm run start"]
+CMD ["sh", "-c", "node scripts/prisma.mjs db push --skip-generate && npm run start"]

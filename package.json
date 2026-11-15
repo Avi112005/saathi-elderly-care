@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "node scripts/prisma.mjs generate && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
@@ -17,12 +17,13 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "db:push": "prisma db push",
+    "db:push": "node scripts/prisma.mjs db push",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "prisma db push --force-reset && tsx prisma/seed.ts",
+    "db:reset": "node scripts/prisma.mjs db push --force-reset && tsx prisma/seed.ts",
+    "setup": "node scripts/prisma.mjs db push && tsx prisma/seed.ts",
+    "remote:setup": "node --env-file=.env.remote scripts/prisma.mjs db push && tsx --env-file=.env.remote prisma/seed.ts && node scripts/prisma.mjs generate",
     "reminders:run": "tsx scripts/run-reminders.ts",
-    "setup": "prisma db push && tsx prisma/seed.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "node scripts/prisma.mjs generate"
   },
   "dependencies": {
     "@prisma/client": "6.19.3",

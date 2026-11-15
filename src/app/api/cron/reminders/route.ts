@@ -6,6 +6,8 @@ import { purgeExpired } from "@/lib/server/housekeeping";
 import { getMailer } from "@/lib/email/mailer";
 
 export const dynamic = "force-dynamic";
+/** A sweep of many circles can take a few seconds; allow up to a minute on serverless hosts. */
+export const maxDuration = 60;
 
 function authorised(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -17,7 +19,7 @@ function authorised(request: NextRequest): boolean {
 }
 
 /**
- * External trigger for the reminder engine (Vercel Cron, GitHub Actions, cron-job.org…).
+ * External trigger for the reminder engine (Supabase pg_cron, Vercel Cron, cron-job.org…).
  * Requires `Authorization: Bearer $CRON_SECRET`. Idempotent — safe to call every minute.
  */
 async function handle(request: NextRequest) {
