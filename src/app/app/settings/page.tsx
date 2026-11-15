@@ -34,11 +34,17 @@ export default async function SettingsPage() {
           </Link>
         ))}
       </nav>
-      <PageHeader eyebrow="Settings" title="Your settings" description="Your details and emails are personal. Health details are shared with the whole circle." />
+      <PageHeader
+        eyebrow="Settings"
+        title="Your settings"
+        description="Your details and emails are personal. Health details are shared with the whole circle."
+      />
 
       <div className="flex flex-col gap-8">
         <section aria-labelledby="me-title">
-          <h2 id="me-title" className="mb-3 text-2xl">Me &amp; notifications</h2>
+          <h2 id="me-title" className="mb-3 text-2xl">
+            Me &amp; notifications
+          </h2>
           <Card className="p-5 sm:p-6">
             <MySettingsForm
               initial={{
@@ -59,7 +65,9 @@ export default async function SettingsPage() {
         </section>
 
         <section aria-labelledby="pin-title">
-          <h2 id="pin-title" className="mb-3 text-2xl">PIN</h2>
+          <h2 id="pin-title" className="mb-3 text-2xl">
+            PIN
+          </h2>
           <Card className="p-5 sm:p-6">
             <ChangePinForm />
           </Card>
@@ -67,7 +75,9 @@ export default async function SettingsPage() {
 
         {editProfile && (
           <section aria-labelledby="profile-title">
-            <h2 id="profile-title" className="mb-3 text-2xl">{profile.preferredName}&apos;s health profile</h2>
+            <h2 id="profile-title" className="mb-3 text-2xl">
+              {profile.preferredName}&apos;s health profile
+            </h2>
             <Card className="p-5 sm:p-6">
               <ProfileForm
                 zones={Intl.supportedValuesOf("timeZone")}
@@ -93,9 +103,14 @@ export default async function SettingsPage() {
 
         {editProfile && !profile.isDemo && (
           <section aria-labelledby="danger-title">
-            <h2 id="danger-title" className="mb-3 text-2xl text-rose-700">Delete care circle</h2>
+            <h2 id="danger-title" className="mb-3 text-2xl text-rose-700">
+              Delete care circle
+            </h2>
             <Card className="border-rose-100 p-5 sm:p-6">
-              <p className="mb-4 text-ink-2">Removes the profile, medicines, history, appointments and every member&apos;s access. This cannot be undone.</p>
+              <p className="mb-4 text-ink-2">
+                Removes the profile, medicines, history, appointments and every member&apos;s access. This cannot be
+                undone.
+              </p>
               <DeleteCircleForm name={profile.preferredName} />
             </Card>
           </section>

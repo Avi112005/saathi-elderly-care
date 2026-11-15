@@ -74,11 +74,35 @@ const BADGE: Record<string, string> = {
   ink: "bg-paper-3 text-ink",
 };
 
-export function Badge({ tone = "ink", children, className = "" }: { tone?: keyof typeof BADGE; children: ReactNode; className?: string }) {
-  return <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${BADGE[tone]} ${className}`}>{children}</span>;
+export function Badge({
+  tone = "ink",
+  children,
+  className = "",
+}: {
+  tone?: keyof typeof BADGE;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${BADGE[tone]} ${className}`}
+    >
+      {children}
+    </span>
+  );
 }
 
-export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?: string; title: ReactNode; description?: ReactNode; actions?: ReactNode }) {
+export function PageHeader({
+  eyebrow,
+  title,
+  description,
+  actions,
+}: {
+  eyebrow?: string;
+  title: ReactNode;
+  description?: ReactNode;
+  actions?: ReactNode;
+}) {
   return (
     <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="max-w-2xl">
@@ -91,7 +115,17 @@ export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?:
   );
 }
 
-export function EmptyState({ icon, title, children, action }: { icon: IconName; title: string; children?: ReactNode; action?: ReactNode }) {
+export function EmptyState({
+  icon,
+  title,
+  children,
+  action,
+}: {
+  icon: IconName;
+  title: string;
+  children?: ReactNode;
+  action?: ReactNode;
+}) {
   return (
     <div className="card dot-grid flex flex-col items-center px-6 py-12 text-center">
       <span className="grid size-12 place-items-center rounded-2xl bg-sky-100 text-sky-700">
@@ -113,23 +147,56 @@ const AVATAR: Record<string, string> = {
   violet: "bg-[#ece6fb] text-[#4b3a8a]",
 };
 
-export function Avatar({ name, color = "sky", size = "md" }: { name: string; color?: string; size?: "sm" | "md" | "lg" }) {
+export function Avatar({
+  name,
+  color = "sky",
+  size = "md",
+}: {
+  name: string;
+  color?: string;
+  size?: "sm" | "md" | "lg";
+}) {
   const dims = size === "lg" ? "size-16 text-2xl" : size === "sm" ? "size-8 text-xs" : "size-11 text-base";
   return (
-    <span aria-hidden="true" className={`grid shrink-0 place-items-center rounded-full font-serif ${dims} ${AVATAR[color] ?? AVATAR.sky}`}>
+    <span
+      aria-hidden="true"
+      className={`grid shrink-0 place-items-center rounded-full font-serif ${dims} ${AVATAR[color] ?? AVATAR.sky}`}
+    >
       {initials(name)}
     </span>
   );
 }
 
 /** Small circular progress ring with an accessible text equivalent. */
-export function ProgressRing({ value, size = 96, stroke = 9, label }: { value: number | null; size?: number; stroke?: number; label: string }) {
+export function ProgressRing({
+  value,
+  size = 96,
+  stroke = 9,
+  label,
+}: {
+  value: number | null;
+  size?: number;
+  stroke?: number;
+  label: string;
+}) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = value ?? 0;
-  const color = value === null ? "var(--color-line-2)" : pct >= 90 ? "var(--color-sage)" : pct >= 70 ? "var(--color-marigold-400)" : "var(--color-rose)";
+  const color =
+    value === null
+      ? "var(--color-line-2)"
+      : pct >= 90
+        ? "var(--color-sage)"
+        : pct >= 70
+          ? "var(--color-marigold-400)"
+          : "var(--color-rose)";
   return (
-    <div className="relative grid place-items-center" style={{ width: size, height: size }} role="img" aria-label={label}>
+    <div
+      className="relative grid place-items-center"
+      style={{ width: size, height: size }}
+      role="img"
+      aria-label={label}
+    >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true" className="-rotate-90">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-paper-3)" strokeWidth={stroke} />
         <circle

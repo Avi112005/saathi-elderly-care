@@ -26,7 +26,10 @@ export function SideNavLink({ item }: { item: NavItem }) {
       <Icon name={item.icon} className="size-5" />
       <span className="flex-1">{item.label}</span>
       {item.badge ? (
-        <span className="grid min-w-6 place-items-center rounded-full bg-marigold-400 px-1.5 text-xs font-bold text-ink" aria-label={`${item.badge} waiting`}>
+        <span
+          className="grid min-w-6 place-items-center rounded-full bg-marigold-400 px-1.5 text-xs font-bold text-ink"
+          aria-label={`${item.badge} waiting`}
+        >
           {item.badge}
         </span>
       ) : null}
@@ -44,7 +47,12 @@ export function TabLink({ item }: { item: NavItem }) {
     >
       <Icon name={item.icon} className="size-6" />
       {item.label}
-      {item.badge ? <span className="absolute top-2 right-[calc(50%-18px)] size-2.5 rounded-full bg-marigold-600" aria-label={`${item.badge} waiting`} /> : null}
+      {item.badge ? (
+        <span
+          className="absolute top-2 right-[calc(50%-18px)] size-2.5 rounded-full bg-marigold-600"
+          aria-label={`${item.badge} waiting`}
+        />
+      ) : null}
     </Link>
   );
 }

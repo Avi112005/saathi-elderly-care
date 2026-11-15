@@ -7,6 +7,8 @@
  *   nudge after   → NUDGE     : "did you take it?" to the elder and caretakers
  *   escalate after→ ESCALATE  : dose marked missed, the whole circle is informed
  */
+import { MINUTE_MS } from "./time";
+
 export type EscalationStage = "NONE" | "UPCOMING" | "NUDGE" | "ESCALATE";
 
 export interface EscalationPolicy {
@@ -24,8 +26,12 @@ export const DEFAULT_POLICY: EscalationPolicy = {
   lookbackMin: 24 * 60,
 };
 
-export function escalationStage(scheduledFor: Date, now: Date, policy: EscalationPolicy = DEFAULT_POLICY): EscalationStage {
-  const minutesSince = (now.getTime() - scheduledFor.getTime()) / 60_000;
+export function escalationStage(
+  scheduledFor: Date,
+  now: Date,
+  policy: EscalationPolicy = DEFAULT_POLICY,
+): EscalationStage {
+  const minutesSince = (now.getTime() - scheduledFor.getTime()) / MINUTE_MS;
   if (minutesSince > policy.lookbackMin) return "NONE";
   if (minutesSince >= policy.escalateAfterMin) return "ESCALATE";
   if (minutesSince >= policy.nudgeAfterMin) return "NUDGE";
@@ -35,14 +41,20 @@ export function escalationStage(scheduledFor: Date, now: Date, policy: Escalatio
 
 /** Validates a policy coming from user settings: the ladder must strictly climb. */
 export function isValidPolicy(p: Pick<EscalationPolicy, "leadMin" | "nudgeAfterMin" | "escalateAfterMin">): boolean {
-  return p.leadMin >= 0 && p.leadMin <= 120 && p.nudgeAfterMin >= 5 && p.escalateAfterMin > p.nudgeAfterMin && p.escalateAfterMin <= 720;
+  return (
+    p.leadMin >= 0 &&
+    p.leadMin <= 120 &&
+    p.nudgeAfterMin >= 5 &&
+    p.escalateAfterMin > p.nudgeAfterMin &&
+    p.escalateAfterMin <= 720
+  );
 }
 
 export type AppointmentStage = "NONE" | "DAY_BEFORE" | "SOON";
 
 /** 24 hours before → DAY_BEFORE; 2 hours before → SOON. Past appointments → NONE. */
 export function appointmentStage(startsAt: Date, now: Date): AppointmentStage {
-  const minutesUntil = (startsAt.getTime() - now.getTime()) / 60_000;
+  const minutesUntil = (startsAt.getTime() - now.getTime()) / MINUTE_MS;
   if (minutesUntil <= 0) return "NONE";
   if (minutesUntil <= 120) return "SOON";
   if (minutesUntil <= 24 * 60) return "DAY_BEFORE";

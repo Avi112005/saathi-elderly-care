@@ -17,7 +17,10 @@ export default async function AppointmentPage({ params }: { params: Promise<{ id
   if (!appt) notFound();
   const zone = member.profile.timezone;
   const when = DateTime.fromJSDate(appt.startsAt, { zone });
-  const questions = appt.questions.split("\n").map((q) => q.trim()).filter(Boolean);
+  const questions = appt.questions
+    .split("\n")
+    .map((q) => q.trim())
+    .filter(Boolean);
   const editable = can(member, "appointment:edit");
 
   return (
@@ -35,14 +38,20 @@ export default async function AppointmentPage({ params }: { params: Promise<{ id
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="flex flex-col gap-6">
           <Card className="p-5 sm:p-6">
-            <h2 className="flex items-center gap-2 text-2xl"><Icon name="help" className="size-6 text-sky-600" /> Questions for the doctor</h2>
-            <p className="mt-1 text-sm text-ink-2">Take this list into the room — or print the health card, which includes it.</p>
+            <h2 className="flex items-center gap-2 text-2xl">
+              <Icon name="help" className="size-6 text-sky-600" /> Questions for the doctor
+            </h2>
+            <p className="mt-1 text-sm text-ink-2">
+              Take this list into the room — or print the health card, which includes it.
+            </p>
             {questions.length === 0 ? (
               <p className="mt-4 text-ink-2">No questions yet.</p>
             ) : (
               <ol className="mt-4 flex list-decimal flex-col gap-2 pl-6 marker:font-serif marker:text-sky-600">
                 {questions.map((q, i) => (
-                  <li key={i} className="pl-1 text-lg">{q}</li>
+                  <li key={i} className="pl-1 text-lg">
+                    {q}
+                  </li>
                 ))}
               </ol>
             )}
@@ -84,21 +93,31 @@ export default async function AppointmentPage({ params }: { params: Promise<{ id
             <Card className="p-5">
               {appt.transport && (
                 <>
-                  <h2 className="font-sans text-sm font-semibold tracking-widest text-ink-3 uppercase">Getting there</h2>
+                  <h2 className="font-sans text-sm font-semibold tracking-widest text-ink-3 uppercase">
+                    Getting there
+                  </h2>
                   <p className="mt-1">{appt.transport}</p>
                 </>
               )}
               {appt.notes && (
                 <>
-                  <h2 className="mt-4 font-sans text-sm font-semibold tracking-widest text-ink-3 uppercase">Bring / notes</h2>
+                  <h2 className="mt-4 font-sans text-sm font-semibold tracking-widest text-ink-3 uppercase">
+                    Bring / notes
+                  </h2>
                   <p className="mt-1 whitespace-pre-line">{appt.notes}</p>
                 </>
               )}
             </Card>
           )}
           <Card className="p-5">
-            <h2 className="mb-4 font-sans text-sm font-semibold tracking-widest text-ink-3 uppercase">After the visit</h2>
-            {editable ? <OutcomeForm id={appt.id} status={appt.status} outcome={appt.outcome} /> : <p className="whitespace-pre-line">{appt.outcome || "No notes yet."}</p>}
+            <h2 className="mb-4 font-sans text-sm font-semibold tracking-widest text-ink-3 uppercase">
+              After the visit
+            </h2>
+            {editable ? (
+              <OutcomeForm id={appt.id} status={appt.status} outcome={appt.outcome} />
+            ) : (
+              <p className="whitespace-pre-line">{appt.outcome || "No notes yet."}</p>
+            )}
           </Card>
         </aside>
       </div>

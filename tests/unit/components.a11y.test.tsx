@@ -5,7 +5,13 @@ import userEvent from "@testing-library/user-event";
 import axe from "axe-core";
 
 // Server actions are replaced with stubs: these tests are about markup and behaviour.
-vi.mock("@/app/actions/medications", () => ({ logDose: vi.fn(), undoDoseAction: vi.fn(), saveMedication: vi.fn(), addStock: vi.fn(), stopMedication: vi.fn() }));
+vi.mock("@/app/actions/medications", () => ({
+  logDose: vi.fn(),
+  undoDoseAction: vi.fn(),
+  saveMedication: vi.fn(),
+  addStock: vi.fn(),
+  stopMedication: vi.fn(),
+}));
 
 import { DoseCard, type DoseCardData } from "@/components/app/dose-card";
 import { QuickCheck } from "@/components/landing/quick-check";
@@ -15,7 +21,9 @@ import { ProgressRing } from "@/components/ui/primitives";
 async function expectNoAxeViolations(container: HTMLElement) {
   // jsdom can't compute rendered colours, so contrast is checked by the Playwright + axe
   // suite in a real browser instead. `region` doesn't apply to isolated components.
-  const results = await axe.run(container, { rules: { region: { enabled: false }, "color-contrast": { enabled: false } } });
+  const results = await axe.run(container, {
+    rules: { region: { enabled: false }, "color-contrast": { enabled: false } },
+  });
   const summary = results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`);
   expect(summary).toEqual([]);
 }
@@ -72,7 +80,15 @@ describe("DoseCard", () => {
 
 describe("form primitives", () => {
   it("links labels, hints and errors for screen readers", async () => {
-    const { container } = render(<TextField label="Medicine name" name="name" hint="As on the strip" errors={["Medicine name is required"]} required />);
+    const { container } = render(
+      <TextField
+        label="Medicine name"
+        name="name"
+        hint="As on the strip"
+        errors={["Medicine name is required"]}
+        required
+      />,
+    );
     const input = screen.getByLabelText(/Medicine name/);
     expect(input).toHaveAttribute("aria-invalid", "true");
     expect(input).toHaveAccessibleDescription("Medicine name is required");

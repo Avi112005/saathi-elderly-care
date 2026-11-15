@@ -4,6 +4,7 @@ import { logActivity } from "./audit";
 import type { Role } from "@/lib/domain/types";
 import type { z } from "zod";
 import type { createCircleSchema, joinSchema } from "@/lib/validation/schemas";
+import { HOUR_MS, MINUTE_MS } from "@/lib/domain/time";
 
 export const MAX_FAILED_ATTEMPTS = 5;
 export const LOCKOUT_MINUTES = 15;
@@ -83,7 +84,12 @@ export async function createCircle(db: PrismaClient, input: z.infer<typeof creat
     }
 
     await logActivity(
-      { profileId: profile.id, actorId: creator.id, action: "circle.created", summary: `${creator.name} created the care circle for ${profile.preferredName}` },
+      {
+        profileId: profile.id,
+        actorId: creator.id,
+        action: "circle.created",
+        summary: `${creator.name} created the care circle for ${profile.preferredName}`,
+      },
       tx,
     );
     return { profile, member: creator };
@@ -113,20 +119,26 @@ export async function authenticate(
   }
 
   if (await verifyPasscode(input.pin, member.passcodeHash)) {
-    await db.member.update({ where: { id: member.id }, data: { failedAttempts: 0, lockedUntil: null, lastSeenAt: now } });
+    await db.member.update({
+      where: { id: member.id },
+      data: { failedAttempts: 0, lockedUntil: null, lastSeenAt: now },
+    });
     return { ok: true, memberId: member.id };
   }
 
   const failed = member.failedAttempts + 1;
   if (failed >= MAX_FAILED_ATTEMPTS) {
-    const retryAt = new Date(now.getTime() + LOCKOUT_MINUTES * 60_000);
+    const retryAt = new Date(now.getTime() + LOCKOUT_MINUTES * MINUTE_MS);
     await db.member.update({ where: { id: member.id }, data: { failedAttempts: 0, lockedUntil: retryAt } });
-    await logActivity({
-      profileId: member.profileId,
-      actorId: null,
-      action: "security.lockout",
-      summary: `${member.name}'s access was paused for ${LOCKOUT_MINUTES} minutes after ${MAX_FAILED_ATTEMPTS} wrong PINs`,
-    }, db);
+    await logActivity(
+      {
+        profileId: member.profileId,
+        actorId: null,
+        action: "security.lockout",
+        summary: `${member.name}'s access was paused for ${LOCKOUT_MINUTES} minutes after ${MAX_FAILED_ATTEMPTS} wrong PINs`,
+      },
+      db,
+    );
     return { ok: false, reason: "locked", retryAt };
   }
   await db.member.update({ where: { id: member.id }, data: { failedAttempts: failed } });
@@ -140,9 +152,16 @@ export async function createInvite(
   now: Date = new Date(),
 ): Promise<{ code: string; expiresAt: Date }> {
   const code = generateInviteCode();
-  const expiresAt = new Date(now.getTime() + INVITE_TTL_HOURS * 3_600_000);
+  const expiresAt = new Date(now.getTime() + INVITE_TTL_HOURS * HOUR_MS);
   await db.invite.create({
-    data: { profileId: input.profileId, codeHash: sha256(code), role: input.role, label: input.label, createdById: input.createdById, expiresAt },
+    data: {
+      profileId: input.profileId,
+      codeHash: sha256(code),
+      role: input.role,
+      label: input.label,
+      createdById: input.createdById,
+      expiresAt,
+    },
   });
   return { code, expiresAt };
 }
@@ -180,7 +199,12 @@ export async function redeemInvite(
       },
     });
     await logActivity(
-      { profileId: invite.profileId, actorId: member.id, action: "member.joined", summary: `${member.name} joined as ${invite.role.toLowerCase()}` },
+      {
+        profileId: invite.profileId,
+        actorId: member.id,
+        action: "member.joined",
+        summary: `${member.name} joined as ${invite.role.toLowerCase()}`,
+      },
       tx,
     );
     return { ok: true as const, memberId: member.id, profileId: invite.profileId };

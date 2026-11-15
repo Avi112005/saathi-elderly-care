@@ -73,3 +73,16 @@ export function isRole(value: unknown): value is Role {
   return typeof value === "string" && (ROLES as readonly string[]).includes(value);
 }
 
+/** Narrows a stored string to a known value, falling back to a safe default. */
+export function oneOf<T extends string>(allowed: readonly T[], value: string | null | undefined, fallback: T): T {
+  return (allowed as readonly string[]).includes(value ?? "") ? (value as T) : fallback;
+}
+
+export const toFoodTiming = (value: string): FoodTiming => oneOf(FOOD_TIMINGS, value, "ANY");
+export const toDoseStatus = (value: string): DoseStatus => oneOf(DOSE_STATUSES, value, "MISSED");
+
+/** "With food", "Before food"… or "" when the timing doesn't matter. */
+export function foodTimingLabel(value: string): string {
+  const timing = toFoodTiming(value);
+  return timing === "ANY" ? "" : FOOD_TIMING_LABEL[timing];
+}

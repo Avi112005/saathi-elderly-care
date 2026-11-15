@@ -35,11 +35,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     { href: "/app/outbox", label: "Email outbox", icon: "mail" },
     { href: "/app/settings", label: "Settings", icon: "sliders" },
   ];
-  const tabs: NavItem[] = [nav[0]!, nav[1]!, nav[3]!, { ...nav[5]!, label: "Circle" }, { href: "/app/settings", label: "More", icon: "menu" }];
+  const tabs: NavItem[] = [
+    nav[0]!,
+    nav[1]!,
+    nav[3]!,
+    { ...nav[5]!, label: "Circle" },
+    { href: "/app/settings", label: "More", icon: "menu" },
+  ];
 
   return (
     <div className="min-h-dvh bg-paper lg:grid lg:grid-cols-[17rem_1fr]">
-      <aside className="no-print sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface/70 px-4 py-5 lg:flex" aria-label="Sidebar">
+      <aside
+        className="no-print sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface/70 px-4 py-5 lg:flex"
+        aria-label="Sidebar"
+      >
         <Logo href="/app" />
         <div className="mt-6 rounded-2xl border border-line bg-paper p-3.5">
           <p className="text-xs font-semibold tracking-widest text-ink-3 uppercase">Caring for</p>
@@ -65,7 +74,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </p>
           </div>
           <form action={signOut}>
-            <button className="grid size-10 place-items-center rounded-xl text-ink-2 hover:bg-paper-2 hover:text-ink" aria-label="Sign out" title="Sign out">
+            <button
+              className="grid size-10 place-items-center rounded-xl text-ink-2 hover:bg-paper-2 hover:text-ink"
+              aria-label="Sign out"
+              title="Sign out"
+            >
               <Icon name="logout" />
             </button>
           </form>
@@ -75,7 +88,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="flex min-w-0 flex-col">
         {member.profile.isDemo && (
           <p className="no-print bg-ink px-4 py-2 text-center text-sm text-white">
-            Demo circle — you&apos;re signed in as <strong>{member.name}</strong> ({ROLE_LABEL[member.role].toLowerCase()}). Sample data only.
+            Demo circle — you&apos;re signed in as <strong>{member.name}</strong> (
+            {ROLE_LABEL[member.role].toLowerCase()}). Sample data only.
           </p>
         )}
         <header className="no-print sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-paper/90 px-4 py-2.5 backdrop-blur sm:px-8">
@@ -88,7 +102,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="ml-auto flex items-center gap-2">
             <DisplayControls prefs={prefs} />
             <form action={signOut} className="lg:hidden">
-              <button className="grid size-10 place-items-center rounded-xl text-ink-2 hover:bg-paper-2" aria-label="Sign out">
+              <button
+                className="grid size-10 place-items-center rounded-xl text-ink-2 hover:bg-paper-2"
+                aria-label="Sign out"
+              >
                 <Icon name="logout" />
               </button>
             </form>
@@ -99,7 +116,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </main>
       </div>
 
-      <nav aria-label="App (mobile)" className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 backdrop-blur lg:hidden">
+      <nav
+        aria-label="App (mobile)"
+        className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 backdrop-blur lg:hidden"
+      >
         <ul className="flex">
           {tabs.map((t) => (
             <li key={t.href} className="flex flex-1">

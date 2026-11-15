@@ -57,7 +57,15 @@ describe("reminder engine — doses", () => {
   it("stays quiet about doses that were logged", async () => {
     const { profile, elder } = await makeCircle();
     const med = await addMed(profile.id);
-    await db.doseLog.create({ data: { profileId: profile.id, medicationId: med.id, scheduledFor: utc("2026-03-10T08:00:00"), status: "TAKEN", loggedById: elder.id } });
+    await db.doseLog.create({
+      data: {
+        profileId: profile.id,
+        medicationId: med.id,
+        scheduledFor: utc("2026-03-10T08:00:00"),
+        status: "TAKEN",
+        loggedById: elder.id,
+      },
+    });
     const r = await sweep("2026-03-10T10:05:00");
     expect(r.emails.SENT + r.markedMissed).toBe(0);
   });
@@ -113,7 +121,14 @@ describe("reminder engine — doses", () => {
 describe("reminder engine — appointments, refills, digest", () => {
   it("reminds everyone the day before and again two hours before", async () => {
     const { profile } = await makeCircle();
-    await db.appointment.create({ data: { profileId: profile.id, title: "Cardiology", startsAt: utc("2026-03-11T11:00:00"), questions: "Ask about BP" } });
+    await db.appointment.create({
+      data: {
+        profileId: profile.id,
+        title: "Cardiology",
+        startsAt: utc("2026-03-11T11:00:00"),
+        questions: "Ask about BP",
+      },
+    });
     await sweep("2026-03-10T12:00:00");
     expect(await sentTo("APPOINTMENT")).toHaveLength(3);
     await sweep("2026-03-11T09:30:00");
@@ -134,7 +149,15 @@ describe("reminder engine — appointments, refills, digest", () => {
   it("sends the evening digest to members who asked for it", async () => {
     const { profile, elder } = await makeCircle();
     const med = await addMed(profile.id, { times: "08:00,13:00" });
-    await db.doseLog.create({ data: { profileId: profile.id, medicationId: med.id, scheduledFor: utc("2026-03-10T08:00:00"), status: "TAKEN", loggedById: elder.id } });
+    await db.doseLog.create({
+      data: {
+        profileId: profile.id,
+        medicationId: med.id,
+        scheduledFor: utc("2026-03-10T08:00:00"),
+        status: "TAKEN",
+        loggedById: elder.id,
+      },
+    });
     await sweep("2026-03-10T19:59:00");
     expect(await sentTo("DAILY_DIGEST")).toEqual([]);
     await sweep("2026-03-10T20:01:00");

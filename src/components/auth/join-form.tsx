@@ -25,12 +25,44 @@ export function JoinForm({ code }: { code?: string }) {
       />
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField label="Your name" name="name" autoComplete="name" required errors={e.name} maxLength={60} />
-        <TextField label="Relationship" name="relationship" placeholder="Daughter, nurse…" errors={e.relationship} maxLength={40} />
+        <TextField
+          label="Relationship"
+          name="relationship"
+          placeholder="Daughter, nurse…"
+          errors={e.relationship}
+          maxLength={40}
+        />
       </div>
-      <TextField label="Your email" name="email" type="email" autoComplete="email" hint="Where your reminders and alerts go." errors={e.email} />
+      <TextField
+        label="Your email"
+        name="email"
+        type="email"
+        autoComplete="email"
+        hint="Where your reminders and alerts go."
+        errors={e.email}
+      />
       <div className="grid gap-4 sm:grid-cols-2">
-        <TextField label="Choose a PIN" name="pin" type="password" inputMode="numeric" autoComplete="new-password" maxLength={8} required hint="6–8 digits." errors={e.pin} />
-        <TextField label="Type it again" name="confirmPin" type="password" inputMode="numeric" autoComplete="new-password" maxLength={8} required errors={e.confirmPin} />
+        <TextField
+          label="Choose a PIN"
+          name="pin"
+          type="password"
+          inputMode="numeric"
+          autoComplete="new-password"
+          maxLength={8}
+          required
+          hint="6–8 digits."
+          errors={e.pin}
+        />
+        <TextField
+          label="Type it again"
+          name="confirmPin"
+          type="password"
+          inputMode="numeric"
+          autoComplete="new-password"
+          maxLength={8}
+          required
+          errors={e.confirmPin}
+        />
       </div>
       <FormMessage state={state} />
       <SubmitButton size="lg" pendingLabel="Joining…" icon="users">

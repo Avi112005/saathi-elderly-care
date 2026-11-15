@@ -40,7 +40,11 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageHeader eyebrow="Audit trail" title="Activity" description="Every change anyone makes is recorded here — who, what and when. Nothing can be edited or deleted." />
+      <PageHeader
+        eyebrow="Audit trail"
+        title="Activity"
+        description="Every change anyone makes is recorded here — who, what and when. Nothing can be edited or deleted."
+      />
       {groups.size === 0 && <Card className="p-6 text-ink-2">No activity yet.</Card>}
       <div className="flex flex-col gap-8">
         {[...groups.entries()].map(([day, list]) => (
@@ -49,7 +53,13 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
             <ol className="card divide-y divide-line">
               {list.map((e) => (
                 <li key={e.id} className="flex items-center gap-4 px-4 py-3 sm:px-5">
-                  {e.actor ? <Avatar name={e.actor.name} color={e.actor.avatarColor} size="sm" /> : <span className="grid size-8 place-items-center rounded-full bg-paper-3 text-ink-2"><Icon name={iconFor(e.action)} className="size-4" /></span>}
+                  {e.actor ? (
+                    <Avatar name={e.actor.name} color={e.actor.avatarColor} size="sm" />
+                  ) : (
+                    <span className="grid size-8 place-items-center rounded-full bg-paper-3 text-ink-2">
+                      <Icon name={iconFor(e.action)} className="size-4" />
+                    </span>
+                  )}
                   <p className="min-w-0 flex-1">{e.summary}</p>
                   <time dateTime={e.createdAt.toISOString()} className="shrink-0 text-sm text-ink-2">
                     {DateTime.fromJSDate(e.createdAt, { zone }).toFormat("h:mm a")}
@@ -61,8 +71,18 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
         ))}
       </div>
       <nav aria-label="Pagination" className="mt-8 flex justify-between">
-        {page > 1 ? <a className="ink-underline font-semibold" href={`?page=${page - 1}`}>← Newer</a> : <span />}
-        {hasMore && <a className="ink-underline font-semibold" href={`?page=${page + 1}`}>Older →</a>}
+        {page > 1 ? (
+          <a className="ink-underline font-semibold" href={`?page=${page - 1}`}>
+            ← Newer
+          </a>
+        ) : (
+          <span />
+        )}
+        {hasMore && (
+          <a className="ink-underline font-semibold" href={`?page=${page + 1}`}>
+            Older →
+          </a>
+        )}
       </nav>
     </>
   );

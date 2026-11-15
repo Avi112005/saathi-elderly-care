@@ -5,7 +5,7 @@ import { prisma } from "@/lib/server/db";
 import { requireMember } from "@/lib/server/session";
 import { can } from "@/lib/domain/permissions";
 import { parseDays, parseTimes } from "@/lib/domain/schedule";
-import { formatReading, ROUTINE_KIND_LABEL, type RoutineKind } from "@/lib/domain/vitals";
+import { formatReading, ROUTINE_KIND_LABEL, toRoutineKind } from "@/lib/domain/vitals";
 import { RoutineForm, StopRoutineButton } from "@/components/app/routine-form";
 import { Badge, Card, PageHeader } from "@/components/ui/primitives";
 
@@ -18,16 +18,22 @@ export default async function RoutinePage({ params }: { params: Promise<{ id: st
   const member = await requireMember();
   const routine = await prisma.routine.findFirst({
     where: { id, profileId: member.profileId },
-    include: { logs: { orderBy: { scheduledFor: "desc" }, take: 20, include: { loggedBy: { select: { name: true } } } } },
+    include: {
+      logs: { orderBy: { scheduledFor: "desc" }, take: 20, include: { loggedBy: { select: { name: true } } } },
+    },
   });
   if (!routine) notFound();
-  const kind = routine.kind as RoutineKind;
+  const kind = toRoutineKind(routine.kind);
   const zone = member.profile.timezone;
   const editable = can(member, "routine:edit") && routine.active;
 
   return (
     <>
-      <PageHeader eyebrow={routine.active ? ROUTINE_KIND_LABEL[kind] : "Stopped routine"} title={routine.title} description={routine.notes || undefined} />
+      <PageHeader
+        eyebrow={routine.active ? ROUTINE_KIND_LABEL[kind] : "Stopped routine"}
+        title={routine.title}
+        description={routine.notes || undefined}
+      />
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <div>
           {editable ? (
@@ -47,7 +53,9 @@ export default async function RoutinePage({ params }: { params: Promise<{ id: st
               />
             </Card>
           ) : (
-            <Card className="p-5 text-ink-2">{routine.active ? "You can view this routine." : "This routine was stopped. Its history is kept."}</Card>
+            <Card className="p-5 text-ink-2">
+              {routine.active ? "You can view this routine." : "This routine was stopped. Its history is kept."}
+            </Card>
           )}
         </div>
         <aside className="flex flex-col gap-4">
@@ -66,7 +74,9 @@ export default async function RoutinePage({ params }: { params: Promise<{ id: st
                     {l.status === "SKIPPED" ? (
                       <Badge tone="ink">skipped</Badge>
                     ) : (
-                      <Badge tone={FLAG_TONE[l.flag as keyof typeof FLAG_TONE] ?? "sage"}>{formatReading(kind, l) || "done"}</Badge>
+                      <Badge tone={FLAG_TONE[l.flag as keyof typeof FLAG_TONE] ?? "sage"}>
+                        {formatReading(kind, l) || "done"}
+                      </Badge>
                     )}
                   </li>
                 ))}

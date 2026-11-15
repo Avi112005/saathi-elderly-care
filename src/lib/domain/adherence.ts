@@ -1,6 +1,6 @@
 import type { DoseOccurrence } from "./schedule";
 import type { DoseStatus } from "./types";
-import { dayPartOf, type DayPart } from "./time";
+import { type DayPart, dayPartOf, MINUTE_MS } from "./time";
 
 export interface LoggedDose {
   medicationId: string;
@@ -14,7 +14,8 @@ export interface ResolvedDose extends DoseOccurrence {
   state: DoseState;
 }
 
-export const doseKey = (medicationId: string, scheduledFor: Date): string => `${medicationId}@${scheduledFor.toISOString()}`;
+export const doseKey = (medicationId: string, scheduledFor: Date): string =>
+  `${medicationId}@${scheduledFor.toISOString()}`;
 
 /**
  * Joins expected doses with what was logged. A dose with no log is OVERDUE once its
@@ -30,7 +31,7 @@ export function resolveDoses(
   return expected.map((o) => {
     const logged = byKey.get(doseKey(o.medicationId, o.scheduledFor));
     if (logged) return { ...o, state: logged };
-    const overdue = now.getTime() - o.scheduledFor.getTime() > overdueAfterMin * 60_000;
+    const overdue = now.getTime() - o.scheduledFor.getTime() > overdueAfterMin * MINUTE_MS;
     return { ...o, state: overdue ? "OVERDUE" : "PENDING" };
   });
 }
@@ -128,7 +129,8 @@ export function deriveInsights(
     insights.push({
       tone: "act",
       title: `Only ${overall.rate}% of doses taken`,
-      detail: "Consider a pill organiser, moving doses next to meals, or asking the doctor whether the schedule can be simplified.",
+      detail:
+        "Consider a pill organiser, moving doses next to meals, or asking the doctor whether the schedule can be simplified.",
     });
   }
 
@@ -206,5 +208,7 @@ export function reconcileWithLogs(
     keys.add(doseKey(l.medicationId, l.scheduledFor));
     kept.push({ medicationId: l.medicationId, scheduledFor: l.scheduledFor, ...toLocal(l.scheduledFor) });
   }
-  return kept.sort((a, b) => a.scheduledFor.getTime() - b.scheduledFor.getTime() || a.medicationId.localeCompare(b.medicationId));
+  return kept.sort(
+    (a, b) => a.scheduledFor.getTime() - b.scheduledFor.getTime() || a.medicationId.localeCompare(b.medicationId),
+  );
 }

@@ -12,6 +12,14 @@ export interface ActionState {
 
 export const IDLE: ActionState = { status: "idle" };
 
-export const ok = (message?: string, data?: Record<string, string>): ActionState => ({ status: "success", message, data });
+export const ok = (message?: string, data?: Record<string, string>): ActionState => ({
+  status: "success",
+  message,
+  data,
+});
 export const warn = (message: string): ActionState => ({ status: "warning", message });
-export const fail = (message: string, fieldErrors?: FieldErrors): ActionState => ({ status: "error", message, fieldErrors });
+export const fail = (message: string, fieldErrors?: FieldErrors): ActionState => ({
+  status: "error",
+  message,
+  fieldErrors,
+});

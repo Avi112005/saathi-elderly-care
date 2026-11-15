@@ -4,8 +4,16 @@ import AxeBuilder from "@axe-core/playwright";
 const CARE_CODE = "CARE-2468";
 
 async function expectAccessible(page: Page) {
-  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
-  const summary = results.violations.map((v) => `${page.url()} ${v.id} (${v.impact}): ${v.nodes.slice(0, 3).map((n) => `${n.target.join(" ")} — ${(n.any[0]?.message ?? "").slice(0, 160)}`).join(" | ")}`);
+  const results = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+    .analyze();
+  const summary = results.violations.map(
+    (v) =>
+      `${page.url()} ${v.id} (${v.impact}): ${v.nodes
+        .slice(0, 3)
+        .map((n) => `${n.target.join(" ")} — ${(n.any[0]?.message ?? "").slice(0, 160)}`)
+        .join(" | ")}`,
+  );
   expect(summary, "axe-core WCAG 2.2 AA violations").toEqual([]);
 }
 
@@ -64,7 +72,7 @@ test.describe("public pages", () => {
   test("wrong PINs are refused", async ({ page }) => {
     await page.goto(`/access/${CARE_CODE}`);
     await page.getByRole("button", { name: /^Rahul/ }).click();
-    await page.getByLabel("Rahul's PIN").fill("123456") // never a valid PIN: the policy rejects it, so it can match no account;
+    await page.getByLabel("Rahul's PIN").fill("123456"); // never a valid PIN: the policy rejects it, so it can match no account;
     await page.getByRole("button", { name: "Open care circle" }).click();
     await expect(page.getByRole("alert").filter({ hasText: "didn't match" })).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`/access/${CARE_CODE}`));
@@ -86,7 +94,18 @@ test.describe("signed-in care circle", () => {
 
   test("every app page passes axe", async ({ page }) => {
     await signIn(page, "Rahul");
-    for (const path of ["/app/medications", "/app/medications/new", "/app/routines", "/app/appointments", "/app/insights", "/app/circle", "/app/card", "/app/activity", "/app/outbox", "/app/settings"]) {
+    for (const path of [
+      "/app/medications",
+      "/app/medications/new",
+      "/app/routines",
+      "/app/appointments",
+      "/app/insights",
+      "/app/circle",
+      "/app/card",
+      "/app/activity",
+      "/app/outbox",
+      "/app/settings",
+    ]) {
       await page.goto(path);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       await expectAccessible(page);

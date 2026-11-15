@@ -13,12 +13,18 @@ export interface DisplayPrefs {
 
 export const DEFAULT_PREFS: DisplayPrefs = { textSize: "md", contrast: "normal" };
 
+const isTextSize = (value: string | undefined): value is TextSize =>
+  (TEXT_SIZES as readonly string[]).includes(value ?? "");
+const isContrast = (value: string | undefined): value is Contrast =>
+  (CONTRASTS as readonly string[]).includes(value ?? "");
+
+/** Reads the display-preference cookie; anything unexpected falls back to the defaults. */
 export function parseA11y(raw: string | undefined | null): DisplayPrefs {
   if (!raw) return DEFAULT_PREFS;
   const [size, contrast] = raw.split(".");
   return {
-    textSize: (TEXT_SIZES as readonly string[]).includes(size ?? "") ? (size as TextSize) : DEFAULT_PREFS.textSize,
-    contrast: (CONTRASTS as readonly string[]).includes(contrast ?? "") ? (contrast as Contrast) : DEFAULT_PREFS.contrast,
+    textSize: isTextSize(size) ? size : DEFAULT_PREFS.textSize,
+    contrast: isContrast(contrast) ? contrast : DEFAULT_PREFS.contrast,
   };
 }
 

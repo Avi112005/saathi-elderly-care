@@ -6,7 +6,7 @@ import { getAdherenceView, getVitalsView, safetyFindings } from "@/lib/server/qu
 import { describeDays, parseTimes } from "@/lib/domain/schedule";
 import { ageFrom, formatClock } from "@/lib/domain/time";
 import { formatDose } from "@/lib/domain/format";
-import { FOOD_TIMING_LABEL, type FoodTiming } from "@/lib/domain/types";
+import { foodTimingLabel } from "@/lib/domain/types";
 import { formatReading } from "@/lib/domain/vitals";
 import { PrintButton } from "@/components/app/print-button";
 import { Card, PageHeader } from "@/components/ui/primitives";
@@ -27,7 +27,10 @@ export default async function HealthCardPage() {
   const member = await requireMember();
   const profile = await prisma.careProfile.findUniqueOrThrow({ where: { id: member.profileId } });
   const [next, adherence, vitals] = await Promise.all([
-    prisma.appointment.findFirst({ where: { profileId: member.profileId, status: "SCHEDULED", startsAt: { gte: new Date() } }, orderBy: { startsAt: "asc" } }),
+    prisma.appointment.findFirst({
+      where: { profileId: member.profileId, status: "SCHEDULED", startsAt: { gte: new Date() } },
+      orderBy: { startsAt: "asc" },
+    }),
     getAdherenceView(member.profileId, 30, new Date(), profile),
     getVitalsView(member.profileId, 30),
   ]);
@@ -54,7 +57,13 @@ export default async function HealthCardPage() {
             <p className="text-xs font-semibold tracking-widest text-ink-2 uppercase">Medical summary</p>
             <h2 className="mt-1 text-4xl leading-tight">{profile.fullName}</h2>
             <p className="text-ink-2">
-              {[age !== null ? `${age} years` : null, profile.dateOfBirth ? `born ${DateTime.fromJSDate(profile.dateOfBirth, { zone: "utc" }).toFormat("d LLL yyyy")}` : null, profile.bloodGroup ? `blood group ${profile.bloodGroup}` : null]
+              {[
+                age !== null ? `${age} years` : null,
+                profile.dateOfBirth
+                  ? `born ${DateTime.fromJSDate(profile.dateOfBirth, { zone: "utc" }).toFormat("d LLL yyyy")}`
+                  : null,
+                profile.bloodGroup ? `blood group ${profile.bloodGroup}` : null,
+              ]
                 .filter(Boolean)
                 .join(" · ")}
             </p>
@@ -75,15 +84,28 @@ export default async function HealthCardPage() {
         </dl>
 
         <h3 className="mt-8 text-2xl">Current medicines</h3>
-        <div className="mt-3 overflow-x-auto" tabIndex={0} role="region" aria-label="Current medicines table (scrolls sideways)">
+        <div
+          className="mt-3 overflow-x-auto"
+          tabIndex={0}
+          role="region"
+          aria-label="Current medicines table (scrolls sideways)"
+        >
           <table className="w-full min-w-[34rem] text-left text-sm">
             <caption className="sr-only">Current medicines with dose and schedule</caption>
             <thead>
               <tr className="border-b-2 border-ink">
-                <th scope="col" className="py-2 pr-3">Medicine</th>
-                <th scope="col" className="py-2 pr-3">Dose</th>
-                <th scope="col" className="py-2 pr-3">When</th>
-                <th scope="col" className="py-2">For</th>
+                <th scope="col" className="py-2 pr-3">
+                  Medicine
+                </th>
+                <th scope="col" className="py-2 pr-3">
+                  Dose
+                </th>
+                <th scope="col" className="py-2 pr-3">
+                  When
+                </th>
+                <th scope="col" className="py-2">
+                  For
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -94,7 +116,9 @@ export default async function HealthCardPage() {
                   </th>
                   <td className="py-2 pr-3">
                     {formatDose(m.doseQuantity, m.doseUnit)}
-                    {m.foodTiming !== "ANY" && <span className="block text-ink-2">{FOOD_TIMING_LABEL[m.foodTiming as FoodTiming]}</span>}
+                    {m.foodTiming !== "ANY" && (
+                      <span className="block text-ink-2">{foodTimingLabel(m.foodTiming)}</span>
+                    )}
                   </td>
                   <td className="py-2 pr-3">
                     {parseTimes(m.times).map(formatClock).join(", ")}
@@ -105,7 +129,9 @@ export default async function HealthCardPage() {
               ))}
               {meds.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-3 text-ink-2">No current medicines.</td>
+                  <td colSpan={4} className="py-3 text-ink-2">
+                    No current medicines.
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -116,11 +142,16 @@ export default async function HealthCardPage() {
           <section>
             <h3 className="text-xl">Last 30 days</h3>
             <p className="mt-1">
-              <strong className="font-serif text-3xl">{adherence.summary.rate ?? "—"}%</strong> of doses taken ({adherence.summary.taken} of {adherence.summary.due}).
+              <strong className="font-serif text-3xl">{adherence.summary.rate ?? "—"}%</strong> of doses taken (
+              {adherence.summary.taken} of {adherence.summary.due}).
             </p>
             {adherence.perMed.filter((m) => (m.summary.rate ?? 100) < 85).length > 0 && (
               <p className="mt-1 text-sm text-ink-2">
-                Often missed: {adherence.perMed.filter((m) => (m.summary.rate ?? 100) < 85).map((m) => `${m.name} (${m.summary.rate}%)`).join(", ")}
+                Often missed:{" "}
+                {adherence.perMed
+                  .filter((m) => (m.summary.rate ?? 100) < 85)
+                  .map((m) => `${m.name} (${m.summary.rate}%)`)
+                  .join(", ")}
               </p>
             )}
           </section>
@@ -132,9 +163,12 @@ export default async function HealthCardPage() {
               </p>
               {next.questions && (
                 <ul className="mt-1 list-disc pl-5 text-sm">
-                  {next.questions.split("\n").filter(Boolean).map((q, i) => (
-                    <li key={i}>{q}</li>
-                  ))}
+                  {next.questions
+                    .split("\n")
+                    .filter(Boolean)
+                    .map((q, i) => (
+                      <li key={i}>{q}</li>
+                    ))}
                 </ul>
               )}
             </section>
@@ -149,7 +183,8 @@ export default async function HealthCardPage() {
                 .filter((v) => v.summary.count > 0)
                 .map((v) => (
                   <li key={v.routineId}>
-                    <strong>{v.title}</strong>: latest {formatReading(v.kind, v.summary.latest!)}, average {formatReading(v.kind, v.summary.average!)} — {v.summary.count} readings
+                    <strong>{v.title}</strong>: latest {formatReading(v.kind, v.summary.latest!)}, average{" "}
+                    {formatReading(v.kind, v.summary.average!)} — {v.summary.count} readings
                     {v.summary.flagged ? `, ${v.summary.flagged} out of range` : ""}
                   </li>
                 ))}
@@ -171,7 +206,8 @@ export default async function HealthCardPage() {
         )}
 
         <p className="mt-8 border-t border-line pt-4 text-xs text-ink-2">
-          Generated by Saathi on {DateTime.now().setZone(zone).toFormat("d LLL yyyy, h:mm a")}. Care code {profile.careCode}. Information is entered by the family and is not verified by a clinician.
+          Generated by Saathi on {DateTime.now().setZone(zone).toFormat("d LLL yyyy, h:mm a")}. Care code{" "}
+          {profile.careCode}. Information is entered by the family and is not verified by a clinician.
         </p>
       </Card>
     </>

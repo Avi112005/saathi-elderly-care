@@ -7,6 +7,7 @@ import { generateToken, sha256 } from "./crypto";
 import { can, type Action } from "@/lib/domain/permissions";
 import { isRole, type Role } from "@/lib/domain/types";
 import { sessionCookieName } from "@/lib/session-cookie";
+import { DAY_MS, MINUTE_MS } from "@/lib/domain/time";
 
 export const SESSION_COOKIE = sessionCookieName();
 const SESSION_DAYS = 14;
@@ -14,7 +15,7 @@ const SESSION_DAYS = 14;
 /** Creates a database-backed session and sets the httpOnly cookie. */
 export async function createSession(memberId: string): Promise<void> {
   const token = generateToken();
-  const expiresAt = new Date(Date.now() + SESSION_DAYS * 86_400_000);
+  const expiresAt = new Date(Date.now() + SESSION_DAYS * DAY_MS);
   const userAgent = ((await headers()).get("user-agent") ?? "").slice(0, 200);
   await prisma.session.create({ data: { tokenHash: sha256(token), memberId, expiresAt, userAgent } });
   (await cookies()).set(SESSION_COOKIE, token, {
@@ -76,24 +77,34 @@ export const getCurrentMember = cache(async (): Promise<CurrentMember | null> =>
       member: {
         include: {
           profile: {
-            select: { id: true, careCode: true, fullName: true, preferredName: true, timezone: true, consentMode: true, isDemo: true },
+            select: {
+              id: true,
+              careCode: true,
+              fullName: true,
+              preferredName: true,
+              timezone: true,
+              consentMode: true,
+              isDemo: true,
+            },
           },
         },
       },
     },
   });
-  if (!session || session.expiresAt < new Date() || !session.member.active || !isRole(session.member.role)) return null;
+  if (!session || session.expiresAt < new Date() || !session.member.active) return null;
 
   const m = session.member;
+  const role = m.role;
+  if (!isRole(role)) return null;
   // Throttled "last seen" so the circle page can show who is active without a write per request.
-  if (!m.lastSeenAt || Date.now() - m.lastSeenAt.getTime() > 5 * 60_000) {
+  if (!m.lastSeenAt || Date.now() - m.lastSeenAt.getTime() > 5 * MINUTE_MS) {
     await prisma.member.update({ where: { id: m.id }, data: { lastSeenAt: new Date() } });
   }
   return {
     id: m.id,
     name: m.name,
     email: m.email,
-    role: m.role as Role,
+    role,
     isAdmin: m.isAdmin,
     profileId: m.profileId,
     profile: m.profile,

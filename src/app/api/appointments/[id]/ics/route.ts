@@ -23,7 +23,14 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     .filter(Boolean)
     .join("\n");
 
-  const body = buildIcs({ id: appt.id, title: `${appt.title} (${member.profile.preferredName})`, startsAt: appt.startsAt, durationMin: appt.durationMin, location: appt.location, description });
+  const body = buildIcs({
+    id: appt.id,
+    title: `${appt.title} (${member.profile.preferredName})`,
+    startsAt: appt.startsAt,
+    durationMin: appt.durationMin,
+    location: appt.location,
+    description,
+  });
   return new NextResponse(body, {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",

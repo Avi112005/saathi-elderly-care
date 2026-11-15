@@ -26,9 +26,20 @@ export default async function MedicationPage({ params }: { params: Promise<{ id:
 
   const zone = member.profile.timezone;
   const [history, profile, activeMeds, hasElder, pending] = await Promise.all([
-    prisma.doseLog.findMany({ where: { medicationId: med.id }, orderBy: { scheduledFor: "desc" }, take: 20, include: { loggedBy: { select: { name: true } } } }),
-    prisma.careProfile.findUniqueOrThrow({ where: { id: member.profileId }, select: { allergies: true, dateOfBirth: true } }),
-    prisma.medication.findMany({ where: { profileId: member.profileId, active: true }, select: { name: true, times: true } }),
+    prisma.doseLog.findMany({
+      where: { medicationId: med.id },
+      orderBy: { scheduledFor: "desc" },
+      take: 20,
+      include: { loggedBy: { select: { name: true } } },
+    }),
+    prisma.careProfile.findUniqueOrThrow({
+      where: { id: member.profileId },
+      select: { allergies: true, dateOfBirth: true },
+    }),
+    prisma.medication.findMany({
+      where: { profileId: member.profileId, active: true },
+      select: { name: true, times: true },
+    }),
     prisma.member.count({ where: { profileId: member.profileId, role: "ELDER", active: true } }),
     prisma.changeRequest.count({ where: { medicationId: med.id, status: "PENDING" } }),
   ]);
@@ -58,7 +69,9 @@ export default async function MedicationPage({ params }: { params: Promise<{ id:
           )}
           {mine.length > 0 && (
             <section aria-labelledby="med-safety">
-              <h2 id="med-safety" className="mb-3 text-2xl">Safety notes</h2>
+              <h2 id="med-safety" className="mb-3 text-2xl">
+                Safety notes
+              </h2>
               <SafetyList findings={mine} />
             </section>
           )}
@@ -91,7 +104,9 @@ export default async function MedicationPage({ params }: { params: Promise<{ id:
             </Card>
           ) : (
             <Card className="p-5 text-ink-2">
-              {med.active ? "You can view this medicine; a caretaker or the elder can change it." : "This medicine was stopped. Its dose history is kept below."}
+              {med.active
+                ? "You can view this medicine; a caretaker or the elder can change it."
+                : "This medicine was stopped. Its dose history is kept below."}
             </Card>
           )}
         </div>
@@ -105,9 +120,16 @@ export default async function MedicationPage({ params }: { params: Promise<{ id:
               <>
                 <p className="mt-2 font-serif text-4xl">{med.stockCount}</p>
                 <p className="text-sm text-ink-2">
-                  {med.doseUnit}s left · {forecast.daysLeft !== null ? `${pluralise(forecast.daysLeft, "day")} at ${forecast.dailyUse}/day` : ""}
+                  {med.doseUnit}s left ·{" "}
+                  {forecast.daysLeft !== null
+                    ? `${pluralise(forecast.daysLeft, "day")} at ${forecast.dailyUse}/day`
+                    : ""}
                 </p>
-                {forecast.runsOutOn && <p className={`mt-1 text-sm font-semibold ${forecast.needsRefill ? "text-amber-700" : "text-ink"}`}>Runs out around {DateTime.fromISO(forecast.runsOutOn).toFormat("d LLL")}</p>}
+                {forecast.runsOutOn && (
+                  <p className={`mt-1 text-sm font-semibold ${forecast.needsRefill ? "text-amber-700" : "text-ink"}`}>
+                    Runs out around {DateTime.fromISO(forecast.runsOutOn).toFormat("d LLL")}
+                  </p>
+                )}
               </>
             )}
             {can(member, "dose:log") && med.active && (
@@ -126,9 +148,12 @@ export default async function MedicationPage({ params }: { params: Promise<{ id:
                 {history.map((h) => (
                   <li key={h.id} className="flex items-center justify-between gap-2">
                     <span>
-                      {DateTime.fromJSDate(h.scheduledFor, { zone }).toFormat("d LLL")} · {formatClock(localClock(h.scheduledFor, zone))}
+                      {DateTime.fromJSDate(h.scheduledFor, { zone }).toFormat("d LLL")} ·{" "}
+                      {formatClock(localClock(h.scheduledFor, zone))}
                     </span>
-                    <Badge tone={STATUS_TONE[h.status as keyof typeof STATUS_TONE] ?? "ink"}>{h.status.toLowerCase()}</Badge>
+                    <Badge tone={STATUS_TONE[h.status as keyof typeof STATUS_TONE] ?? "ink"}>
+                      {h.status.toLowerCase()}
+                    </Badge>
                   </li>
                 ))}
               </ul>

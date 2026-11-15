@@ -10,7 +10,13 @@ import { PinSignIn } from "@/components/auth/pin-sign-in";
 
 export const metadata: Metadata = { title: "Who's checking in?", robots: { index: false } };
 
-export default async function ChooseMemberPage({ params, searchParams }: { params: Promise<{ code: string }>; searchParams: Promise<{ next?: string }> }) {
+export default async function ChooseMemberPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ code: string }>;
+  searchParams: Promise<{ next?: string }>;
+}) {
   const parsed = careCodeSchema.safeParse(decodeURIComponent((await params).code));
   if (!parsed.success) notFound();
   const { next } = await searchParams;
@@ -24,7 +30,11 @@ export default async function ChooseMemberPage({ params, searchParams }: { param
       preferredName: true,
       careCode: true,
       // Only first names, roles and colours are shown before sign-in — never emails.
-      members: { where: { active: true }, select: { id: true, name: true, role: true, avatarColor: true, relationship: true }, orderBy: { createdAt: "asc" } },
+      members: {
+        where: { active: true },
+        select: { id: true, name: true, role: true, avatarColor: true, relationship: true },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
   if (!profile) notFound();
@@ -44,7 +54,11 @@ export default async function ChooseMemberPage({ params, searchParams }: { param
       eyebrow={`Care circle · ${profile.careCode}`}
       title={<>{profile.preferredName}&apos;s circle</>}
       description="Tap your name, then enter your personal PIN."
-      footer={<Link href="/access" className="ink-underline">Use a different care code</Link>}
+      footer={
+        <Link href="/access" className="ink-underline">
+          Use a different care code
+        </Link>
+      }
     >
       <PinSignIn careCode={profile.careCode} members={members} next={next} />
     </AuthShell>

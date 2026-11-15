@@ -1,5 +1,12 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { authenticate, createCircle, createInvite, LOCKOUT_MINUTES, MAX_FAILED_ATTEMPTS, redeemInvite } from "@/lib/server/circle-service";
+import {
+  authenticate,
+  createCircle,
+  createInvite,
+  LOCKOUT_MINUTES,
+  MAX_FAILED_ATTEMPTS,
+  redeemInvite,
+} from "@/lib/server/circle-service";
 import { applyMedicationChange, recordDose, undoDose } from "@/lib/server/medication-service";
 import { sha256 } from "@/lib/server/crypto";
 import { addMed, db, makeCircle, resetDb, utc } from "./helpers";
@@ -35,7 +42,16 @@ describe("createCircle", () => {
   });
 
   it("creates a family admin plus an elder sign-in when set up for a loved one", async () => {
-    const { profile, member } = await createCircle(db, { ...circleInput, setupFor: "LOVED_ONE", yourName: "Rahul", relationship: "Son", email: "rahul@example.com", pin: TEST_PIN_2, confirmPin: TEST_PIN_2, elderPin: TEST_PIN });
+    const { profile, member } = await createCircle(db, {
+      ...circleInput,
+      setupFor: "LOVED_ONE",
+      yourName: "Rahul",
+      relationship: "Son",
+      email: "rahul@example.com",
+      pin: TEST_PIN_2,
+      confirmPin: TEST_PIN_2,
+      elderPin: TEST_PIN,
+    });
     expect(member).toMatchObject({ role: "FAMILY", isAdmin: true, name: "Rahul" });
     const elder = await db.member.findFirstOrThrow({ where: { profileId: profile.id, role: "ELDER" } });
     expect(elder.name).toBe("Kamala");
@@ -43,7 +59,13 @@ describe("createCircle", () => {
   });
 
   it("switches consent off when the elder has no sign-in to give it", async () => {
-    const { profile } = await createCircle(db, { ...circleInput, setupFor: "LOVED_ONE", yourName: "Rahul", pin: TEST_PIN_2, confirmPin: TEST_PIN_2 });
+    const { profile } = await createCircle(db, {
+      ...circleInput,
+      setupFor: "LOVED_ONE",
+      yourName: "Rahul",
+      pin: TEST_PIN_2,
+      confirmPin: TEST_PIN_2,
+    });
     expect(profile.consentMode).toBe(false);
   });
 });
@@ -79,11 +101,23 @@ describe("authenticate", () => {
 });
 
 describe("invites", () => {
-  const join = (inviteCode: string) => ({ inviteCode, name: "Anita", relationship: "Daughter", email: "anita@example.com", pin: TEST_PIN_3, confirmPin: TEST_PIN_3 });
+  const join = (inviteCode: string) => ({
+    inviteCode,
+    name: "Anita",
+    relationship: "Daughter",
+    email: "anita@example.com",
+    pin: TEST_PIN_3,
+    confirmPin: TEST_PIN_3,
+  });
 
   it("stores only a hash and can be redeemed exactly once", async () => {
     const { profile, elder } = await makeCircle();
-    const { code } = await createInvite(db, { profileId: profile.id, role: "FAMILY", label: "Anita", createdById: elder.id });
+    const { code } = await createInvite(db, {
+      profileId: profile.id,
+      role: "FAMILY",
+      label: "Anita",
+      createdById: elder.id,
+    });
     const stored = await db.invite.findFirstOrThrow();
     expect(stored.codeHash).toBe(sha256(code));
     expect(JSON.stringify(stored)).not.toContain(code);
@@ -100,10 +134,19 @@ describe("invites", () => {
   it("rejects expired and revoked invites", async () => {
     const { profile, elder } = await makeCircle();
     const now = utc("2026-03-10T10:00:00");
-    const expired = await createInvite(db, { profileId: profile.id, role: "CARETAKER", label: "", createdById: elder.id }, now);
+    const expired = await createInvite(
+      db,
+      { profileId: profile.id, role: "CARETAKER", label: "", createdById: elder.id },
+      now,
+    );
     expect((await redeemInvite(db, join(expired.code), new Date(now.getTime() + 73 * 3_600_000))).ok).toBe(false);
 
-    const revoked = await createInvite(db, { profileId: profile.id, role: "CARETAKER", label: "", createdById: elder.id });
+    const revoked = await createInvite(db, {
+      profileId: profile.id,
+      role: "CARETAKER",
+      label: "",
+      createdById: elder.id,
+    });
     await db.invite.updateMany({ where: { codeHash: sha256(revoked.code) }, data: { revokedAt: new Date() } });
     expect((await redeemInvite(db, join(revoked.code))).ok).toBe(false);
   });
@@ -111,14 +154,38 @@ describe("invites", () => {
 
 describe("dose logging", () => {
   const now = utc("2026-03-10T08:10:00");
-  const base = (profileId: string, medicationId: string, actorId: string) => ({ profileId, medicationId, actorId, timezone: "UTC", note: "" });
+  const base = (profileId: string, medicationId: string, actorId: string) => ({
+    profileId,
+    medicationId,
+    actorId,
+    timezone: "UTC",
+    note: "",
+  });
 
   it("rejects instants that aren't on the schedule, or are too far ahead", async () => {
     const { profile, elder } = await makeCircle();
     const med = await addMed(profile.id);
-    expect(await recordDose(db, { ...base(profile.id, med.id, elder.id), scheduledFor: utc("2026-03-10T08:05:00"), status: "TAKEN" }, now)).toEqual({ ok: false, error: "not-scheduled" });
-    expect(await recordDose(db, { ...base(profile.id, med.id, elder.id), scheduledFor: utc("2026-03-12T08:00:00"), status: "TAKEN" }, now)).toEqual({ ok: false, error: "too-early" });
-    expect(await recordDose(db, { ...base(profile.id, "other", elder.id), scheduledFor: utc("2026-03-10T08:00:00"), status: "TAKEN" }, now)).toEqual({ ok: false, error: "not-found" });
+    expect(
+      await recordDose(
+        db,
+        { ...base(profile.id, med.id, elder.id), scheduledFor: utc("2026-03-10T08:05:00"), status: "TAKEN" },
+        now,
+      ),
+    ).toEqual({ ok: false, error: "not-scheduled" });
+    expect(
+      await recordDose(
+        db,
+        { ...base(profile.id, med.id, elder.id), scheduledFor: utc("2026-03-12T08:00:00"), status: "TAKEN" },
+        now,
+      ),
+    ).toEqual({ ok: false, error: "too-early" });
+    expect(
+      await recordDose(
+        db,
+        { ...base(profile.id, "other", elder.id), scheduledFor: utc("2026-03-10T08:00:00"), status: "TAKEN" },
+        now,
+      ),
+    ).toEqual({ ok: false, error: "not-found" });
   });
 
   it("keeps stock in step with taken, skipped and undone doses", async () => {
@@ -143,8 +210,14 @@ describe("dose logging", () => {
     const { profile, elder } = await makeCircle();
     const med = await addMed(profile.id);
     const at = utc("2026-03-10T08:00:00");
-    await db.doseLog.create({ data: { profileId: profile.id, medicationId: med.id, scheduledFor: at, status: "MISSED" } });
-    await recordDose(db, { ...base(profile.id, med.id, elder.id), scheduledFor: at, status: "TAKEN" }, utc("2026-03-10T11:00:00"));
+    await db.doseLog.create({
+      data: { profileId: profile.id, medicationId: med.id, scheduledFor: at, status: "MISSED" },
+    });
+    await recordDose(
+      db,
+      { ...base(profile.id, med.id, elder.id), scheduledFor: at, status: "TAKEN" },
+      utc("2026-03-10T11:00:00"),
+    );
     expect((await db.doseLog.findFirstOrThrow()).status).toBe("TAKEN");
     expect((await db.activityLog.findFirstOrThrow({ where: { action: "dose.taken" } })).summary).toContain("(late)");
   });
@@ -152,8 +225,23 @@ describe("dose logging", () => {
 
 describe("applyMedicationChange", () => {
   const input = {
-    name: "Atorvastatin", strength: "10 mg", form: "TABLET" as const, doseQuantity: 1, doseUnit: "tablet", times: ["20:00"], daysOfWeek: [1, 2, 3, 4, 5, 6, 7],
-    startDate: "2026-01-01", endDate: null, foodTiming: "WITH_FOOD" as const, instructions: "", purpose: "Cholesterol", prescriber: "", appearance: "", pillColor: "white" as const, stockCount: 30, refillAt: 7,
+    name: "Atorvastatin",
+    strength: "10 mg",
+    form: "TABLET" as const,
+    doseQuantity: 1,
+    doseUnit: "tablet",
+    times: ["20:00"],
+    daysOfWeek: [1, 2, 3, 4, 5, 6, 7],
+    startDate: "2026-01-01",
+    endDate: null,
+    foodTiming: "WITH_FOOD" as const,
+    instructions: "",
+    purpose: "Cholesterol",
+    prescriber: "",
+    appearance: "",
+    pillColor: "white" as const,
+    stockCount: 30,
+    refillAt: 7,
   };
 
   it("moves the schedule's effective date only when the timing changes", async () => {
@@ -161,19 +249,46 @@ describe("applyMedicationChange", () => {
     const med = await addMed(profile.id, { name: "Atorvastatin", times: "21:00" });
     const before = med.scheduleChangedAt;
 
-    const renamed = await applyMedicationChange(db, { kind: "UPDATE", profileId: profile.id, medicationId: med.id, input: { ...input, times: ["21:00"], purpose: "Heart" }, actorId: elder.id });
+    const renamed = await applyMedicationChange(db, {
+      kind: "UPDATE",
+      profileId: profile.id,
+      medicationId: med.id,
+      input: { ...input, times: ["21:00"], purpose: "Heart" },
+      actorId: elder.id,
+    });
     expect(renamed.scheduleChangedAt.getTime()).toBe(before.getTime());
 
-    const moved = await applyMedicationChange(db, { kind: "UPDATE", profileId: profile.id, medicationId: med.id, input, actorId: elder.id });
+    const moved = await applyMedicationChange(db, {
+      kind: "UPDATE",
+      profileId: profile.id,
+      medicationId: med.id,
+      input,
+      actorId: elder.id,
+    });
     expect(moved.times).toBe("20:00");
     expect(moved.scheduleChangedAt.getTime()).toBeGreaterThan(before.getTime());
-    expect((await db.activityLog.findFirstOrThrow({ where: { action: "medication.updated" }, orderBy: { createdAt: "desc" } })).summary).toContain("times → 8:00 PM");
+    expect(
+      (
+        await db.activityLog.findFirstOrThrow({
+          where: { action: "medication.updated" },
+          orderBy: { createdAt: "desc" },
+        })
+      ).summary,
+    ).toContain("times → 8:00 PM");
   });
 
   it("refuses to touch medicines from another circle", async () => {
     const a = await makeCircle();
     const b = await makeCircle();
     const med = await addMed(a.profile.id);
-    await expect(applyMedicationChange(db, { kind: "ARCHIVE", profileId: b.profile.id, medicationId: med.id, input: null, actorId: b.elder.id })).rejects.toThrow("not found");
+    await expect(
+      applyMedicationChange(db, {
+        kind: "ARCHIVE",
+        profileId: b.profile.id,
+        medicationId: med.id,
+        input: null,
+        actorId: b.elder.id,
+      }),
+    ).rejects.toThrow("not found");
   });
 });

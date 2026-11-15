@@ -58,7 +58,16 @@ describe("permissions", () => {
   const familyAdmin: Actor = { role: "FAMILY", isAdmin: true };
 
   it("lets the elder do everything", () => {
-    for (const a of ["view", "dose:log", "medication:edit", "appointment:edit", "circle:manage", "profile:edit", "request:decide", "consent:disable"] as const) {
+    for (const a of [
+      "view",
+      "dose:log",
+      "medication:edit",
+      "appointment:edit",
+      "circle:manage",
+      "profile:edit",
+      "request:decide",
+      "consent:disable",
+    ] as const) {
       expect(can(elder, a)).toBe(true);
     }
   });

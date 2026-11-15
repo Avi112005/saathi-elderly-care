@@ -1,4 +1,11 @@
-import { createHash, randomBytes, randomInt, scrypt as scryptCb, timingSafeEqual, type ScryptOptions } from "node:crypto";
+import {
+  createHash,
+  randomBytes,
+  randomInt,
+  scrypt as scryptCb,
+  timingSafeEqual,
+  type ScryptOptions,
+} from "node:crypto";
 
 function scrypt(password: string, salt: Buffer, keylen: number, options: ScryptOptions): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -12,7 +19,12 @@ const SCRYPT = { N: 2 ** 15, r: 8, p: 1, keylen: 32, maxmem: 64 * 1024 * 1024 } 
 /** Hashes a passcode as `scrypt$N$r$p$salt$hash` (base64url parts). */
 export async function hashPasscode(passcode: string): Promise<string> {
   const salt = randomBytes(16);
-  const key = await scrypt(passcode, salt, SCRYPT.keylen, { N: SCRYPT.N, r: SCRYPT.r, p: SCRYPT.p, maxmem: SCRYPT.maxmem });
+  const key = await scrypt(passcode, salt, SCRYPT.keylen, {
+    N: SCRYPT.N,
+    r: SCRYPT.r,
+    p: SCRYPT.p,
+    maxmem: SCRYPT.maxmem,
+  });
   return ["scrypt", SCRYPT.N, SCRYPT.r, SCRYPT.p, salt.toString("base64url"), key.toString("base64url")].join("$");
 }
 
@@ -68,7 +80,9 @@ export function formatCareCode(raw: string): string {
 export function formatInviteCode(raw: string): string {
   const clean = raw.toUpperCase().replace(/[^A-Z0-9]/g, "");
   const body = clean.startsWith("JOIN") ? clean.slice(4) : clean;
-  return body.length === 12 ? `JOIN-${body.slice(0, 4)}-${body.slice(4, 8)}-${body.slice(8)}` : raw.toUpperCase().trim();
+  return body.length === 12
+    ? `JOIN-${body.slice(0, 4)}-${body.slice(4, 8)}-${body.slice(8)}`
+    : raw.toUpperCase().trim();
 }
 
 export const CARE_CODE_PATTERN = /^[A-HJ-KMNP-Z2-9]{4}-[A-HJ-KMNP-Z2-9]{4}$/;

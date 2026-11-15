@@ -80,7 +80,15 @@ describe("reading helpers", () => {
 });
 
 describe("routine validation", () => {
-  const routine = { title: "Check blood pressure", kind: "BLOOD_PRESSURE", times: ["08:30"], daysOfWeek: ["1", "4"], startDate: "2026-03-01", endDate: "", notes: "" };
+  const routine = {
+    title: "Check blood pressure",
+    kind: "BLOOD_PRESSURE",
+    times: ["08:30"],
+    daysOfWeek: ["1", "4"],
+    startDate: "2026-03-01",
+    endDate: "",
+    notes: "",
+  };
 
   it("accepts a routine and rejects bad kinds and dates", () => {
     expect(routineSchema.parse(routine)).toMatchObject({ kind: "BLOOD_PRESSURE", daysOfWeek: [1, 4], endDate: null });
@@ -89,7 +97,13 @@ describe("routine validation", () => {
   });
 
   it("range-checks blood-pressure inputs and requires the right reading", () => {
-    const log = { routineId: "r1", scheduledFor: "2026-03-10T03:00:00.000Z", status: "DONE", systolic: "300", diastolic: "80" };
+    const log = {
+      routineId: "r1",
+      scheduledFor: "2026-03-10T03:00:00.000Z",
+      status: "DONE",
+      systolic: "300",
+      diastolic: "80",
+    };
     expect(routineLogSchema.safeParse(log).success).toBe(false);
     const ok = routineLogSchema.parse({ ...log, systolic: "142" });
     expect(readingProblem("BLOOD_PRESSURE", ok)).toBeNull();

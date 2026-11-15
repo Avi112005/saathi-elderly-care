@@ -3,10 +3,18 @@ import { Prisma, type Medication, type Member, type PrismaClient } from "@prisma
 import { scheduleFor, forecastRefill, type DoseOccurrence } from "@/lib/domain/schedule";
 import { doseKey } from "@/lib/domain/adherence";
 import { appointmentStage, escalationStage, DEFAULT_POLICY, type EscalationPolicy } from "@/lib/domain/escalation";
-import { formatClock, isWithinQuietHours, localClock, localDayBounds } from "@/lib/domain/time";
-import { FOOD_TIMING_LABEL, type FoodTiming, type NotificationKind } from "@/lib/domain/types";
+import {
+  DAY_MS,
+  formatClock,
+  HOUR_MS,
+  isWithinQuietHours,
+  localClock,
+  localDayBounds,
+  MINUTE_MS,
+} from "@/lib/domain/time";
+import { foodTimingLabel, type NotificationKind } from "@/lib/domain/types";
 import { formatDose } from "@/lib/domain/format";
-import { formatReading, ROUTINE_KIND_LABEL, type RoutineKind } from "@/lib/domain/vitals";
+import { formatReading, ROUTINE_KIND_LABEL, toRoutineKind } from "@/lib/domain/vitals";
 import { appUrl, deliver, type DeliveryResult, type Mailer } from "@/lib/email/mailer";
 import {
   appointmentEmail,
@@ -33,7 +41,17 @@ const KEY_CHUNK = 500;
 
 type Recipient = Pick<
   Member,
-  "id" | "name" | "email" | "role" | "emailDoseReminders" | "emailMissedDoses" | "emailAppointments" | "emailRefills" | "emailDailyDigest" | "quietStart" | "quietEnd"
+  | "id"
+  | "name"
+  | "email"
+  | "role"
+  | "emailDoseReminders"
+  | "emailMissedDoses"
+  | "emailAppointments"
+  | "emailRefills"
+  | "emailDailyDigest"
+  | "quietStart"
+  | "quietEnd"
 >;
 
 /** An email the sweep intends to send; rendered only if its key hasn't been used yet. */
@@ -45,8 +63,10 @@ interface Planned {
   render: () => RenderedEmail;
 }
 
-export function doseLine(med: Pick<Medication, "name" | "strength" | "doseQuantity" | "doseUnit" | "foodTiming" | "instructions">): DoseLine {
-  const food = med.foodTiming !== "ANY" ? FOOD_TIMING_LABEL[med.foodTiming as FoodTiming] : "";
+export function doseLine(
+  med: Pick<Medication, "name" | "strength" | "doseQuantity" | "doseUnit" | "foodTiming" | "instructions">,
+): DoseLine {
+  const food = foodTimingLabel(med.foodTiming);
   return {
     name: [med.name, med.strength].filter(Boolean).join(" "),
     dose: formatDose(med.doseQuantity, med.doseUnit),
@@ -74,7 +94,12 @@ function groupBy<T>(items: T[], key: (t: T) => string): Map<string, T[]> {
  * medicines and routines), one each for dose logs, routine logs and appointments, and
  * one (chunked) lookup of already-sent keys — then everything is planned in memory.
  */
-export async function runReminderSweep(opts: { db: PrismaClient; mailer: Mailer; now?: Date; profileId?: string }): Promise<SweepResult> {
+export async function runReminderSweep(opts: {
+  db: PrismaClient;
+  mailer: Mailer;
+  now?: Date;
+  profileId?: string;
+}): Promise<SweepResult> {
   const { db, mailer } = opts;
   const now = opts.now ?? new Date();
   const result: SweepResult = { profiles: 0, markedMissed: 0, emails: { SENT: 0, LOGGED: 0, FAILED: 0, DUPLICATE: 0 } };
@@ -93,8 +118,8 @@ export async function runReminderSweep(opts: { db: PrismaClient; mailer: Mailer;
 
   // The widest window any rule needs: 24 h back (lookback, today's digest) to 48 h ahead
   // (tomorrow's appointments in the digest).
-  const from = new Date(now.getTime() - DEFAULT_POLICY.lookbackMin * 60_000);
-  const until = new Date(now.getTime() + (Math.max(...profiles.map((p) => p.reminderLeadMin)) + 1) * 60_000);
+  const from = new Date(now.getTime() - DEFAULT_POLICY.lookbackMin * MINUTE_MS);
+  const until = new Date(now.getTime() + (Math.max(...profiles.map((p) => p.reminderLeadMin)) + 1) * MINUTE_MS);
   const [doseLogs, routineLogs, appointments] = await Promise.all([
     db.doseLog.findMany({
       where: { profileId: { in: ids }, scheduledFor: { gte: from, lt: until } },
@@ -102,9 +127,24 @@ export async function runReminderSweep(opts: { db: PrismaClient; mailer: Mailer;
     }),
     db.routineLog.findMany({
       where: { profileId: { in: ids }, scheduledFor: { gte: from, lt: until } },
-      select: { profileId: true, routineId: true, scheduledFor: true, status: true, systolic: true, diastolic: true, value: true, flag: true },
+      select: {
+        profileId: true,
+        routineId: true,
+        scheduledFor: true,
+        status: true,
+        systolic: true,
+        diastolic: true,
+        value: true,
+        flag: true,
+      },
     }),
-    db.appointment.findMany({ where: { profileId: { in: ids }, status: "SCHEDULED", startsAt: { gt: now, lte: new Date(now.getTime() + 48 * 3_600_000) } } }),
+    db.appointment.findMany({
+      where: {
+        profileId: { in: ids },
+        status: "SCHEDULED",
+        startsAt: { gt: now, lte: new Date(now.getTime() + 48 * HOUR_MS) },
+      },
+    }),
   ]);
   const doseLogsBy = groupBy(doseLogs, (l) => l.profileId);
   const routineLogsBy = groupBy(routineLogs, (l) => l.profileId);
@@ -115,20 +155,33 @@ export async function runReminderSweep(opts: { db: PrismaClient; mailer: Mailer;
   for (const profile of profiles) {
     result.profiles++;
     const zone = profile.timezone;
-    const policy: EscalationPolicy = { ...DEFAULT_POLICY, leadMin: profile.reminderLeadMin, nudgeAfterMin: profile.nudgeAfterMin, escalateAfterMin: profile.escalateAfterMin };
+    const policy: EscalationPolicy = {
+      ...DEFAULT_POLICY,
+      leadMin: profile.reminderLeadMin,
+      nudgeAfterMin: profile.nudgeAfterMin,
+      escalateAfterMin: profile.escalateAfterMin,
+    };
     const recipients: Recipient[] = profile.members.filter((m) => m.email);
     const nowClock = localClock(now, zone);
     const quiet = (r: Recipient) => isWithinQuietHours(nowClock, r.quietStart, r.quietEnd);
-    const who = (r: Recipient) => ({ recipientName: r.name, elderName: profile.preferredName, toElder: r.role === "ELDER", appUrl: base });
-    const plan = (r: Recipient, kind: NotificationKind, key: string, render: () => RenderedEmail) => planned.push({ profileId: profile.id, recipient: r, kind, key, render });
+    const who = (r: Recipient) => ({
+      recipientName: r.name,
+      elderName: profile.preferredName,
+      toElder: r.role === "ELDER",
+      appUrl: base,
+    });
+    const plan = (r: Recipient, kind: NotificationKind, key: string, render: () => RenderedEmail) =>
+      planned.push({ profileId: profile.id, recipient: r, kind, key, render });
 
     /* ---- Doses ------------------------------------------------------- */
-    const to = new Date(now.getTime() + (policy.leadMin + 1) * 60_000);
+    const to = new Date(now.getTime() + (policy.leadMin + 1) * MINUTE_MS);
     const medById = new Map(profile.medications.map((m) => [m.id, m]));
     const doseLogsHere = doseLogsBy.get(profile.id) ?? [];
     const logged = new Set(doseLogsHere.map((l) => doseKey(l.medicationId, l.scheduledFor)));
     const open = scheduleFor(profile.medications, zone, from, to).filter(
-      (o) => !logged.has(doseKey(o.medicationId, o.scheduledFor)) && o.scheduledFor >= medById.get(o.medicationId)!.scheduleChangedAt,
+      (o) =>
+        !logged.has(doseKey(o.medicationId, o.scheduledFor)) &&
+        o.scheduledFor >= medById.get(o.medicationId)!.scheduleChangedAt,
     );
 
     // Doses due at the same moment are grouped into one email per recipient.
@@ -141,20 +194,36 @@ export async function runReminderSweep(opts: { db: PrismaClient; mailer: Mailer;
 
       if (stage === "UPCOMING") {
         for (const r of recipients.filter((r) => r.emailDoseReminders && !quiet(r))) {
-          plan(r, "DOSE_UPCOMING", `dose-upcoming:${profile.id}:${slotIso}:${r.id}`, () => doseUpcomingEmail({ ...who(r), time, doses: lines }));
+          plan(r, "DOSE_UPCOMING", `dose-upcoming:${profile.id}:${slotIso}:${r.id}`, () =>
+            doseUpcomingEmail({ ...who(r), time, doses: lines }),
+          );
         }
       } else if (stage === "NUDGE") {
-        const minutesLate = Math.round((now.getTime() - at.getTime()) / 60_000);
+        const minutesLate = Math.round((now.getTime() - at.getTime()) / MINUTE_MS);
         for (const r of recipients.filter((r) => r.emailMissedDoses && r.role !== "FAMILY")) {
-          plan(r, "DOSE_NUDGE", `dose-nudge:${profile.id}:${slotIso}:${r.id}`, () => doseNudgeEmail({ ...who(r), time, doses: lines, minutesLate }));
+          plan(r, "DOSE_NUDGE", `dose-nudge:${profile.id}:${slotIso}:${r.id}`, () =>
+            doseNudgeEmail({ ...who(r), time, doses: lines, minutesLate }),
+          );
         }
       } else {
         for (const d of doses) {
           try {
             await db.doseLog.create({
-              data: { profileId: profile.id, medicationId: d.medicationId, scheduledFor: d.scheduledFor, status: "MISSED", loggedById: null, note: "Marked missed automatically" },
+              data: {
+                profileId: profile.id,
+                medicationId: d.medicationId,
+                scheduledFor: d.scheduledFor,
+                status: "MISSED",
+                loggedById: null,
+                note: "Marked missed automatically",
+              },
             });
-            doseLogsHere.push({ profileId: profile.id, medicationId: d.medicationId, scheduledFor: d.scheduledFor, status: "MISSED" });
+            doseLogsHere.push({
+              profileId: profile.id,
+              medicationId: d.medicationId,
+              scheduledFor: d.scheduledFor,
+              status: "MISSED",
+            });
             result.markedMissed++;
           } catch (err) {
             // Someone logged the dose between our read and this write — theirs wins.
@@ -162,7 +231,9 @@ export async function runReminderSweep(opts: { db: PrismaClient; mailer: Mailer;
           }
         }
         for (const r of recipients.filter((r) => r.emailMissedDoses)) {
-          plan(r, "DOSE_MISSED", `dose-missed:${profile.id}:${slotIso}:${r.id}`, () => doseMissedEmail({ ...who(r), time, doses: lines }));
+          plan(r, "DOSE_MISSED", `dose-missed:${profile.id}:${slotIso}:${r.id}`, () =>
+            doseMissedEmail({ ...who(r), time, doses: lines }),
+          );
         }
       }
     }
@@ -180,7 +251,9 @@ export async function runReminderSweep(opts: { db: PrismaClient; mailer: Mailer;
       const time = formatClock(items[0]!.localTime);
       const titles = items.map((o) => routineById.get(o.medicationId)!.title);
       for (const r of recipients.filter((r) => r.emailDoseReminders && r.role !== "FAMILY" && !quiet(r))) {
-        plan(r, "ROUTINE_UPCOMING", `routine-upcoming:${profile.id}:${slotIso}:${r.id}`, () => routineUpcomingEmail({ ...who(r), time, routines: titles }));
+        plan(r, "ROUTINE_UPCOMING", `routine-upcoming:${profile.id}:${slotIso}:${r.id}`, () =>
+          routineUpcomingEmail({ ...who(r), time, routines: titles }),
+        );
       }
     }
 
@@ -189,10 +262,22 @@ export async function runReminderSweep(opts: { db: PrismaClient; mailer: Mailer;
       const stage = appointmentStage(a.startsAt, now);
       if (stage === "NONE") continue;
       const when = DateTime.fromJSDate(a.startsAt, { zone }).toFormat("cccc d LLLL, h:mm a");
-      const questions = a.questions.split("\n").map((q) => q.trim()).filter(Boolean);
+      const questions = a.questions
+        .split("\n")
+        .map((q) => q.trim())
+        .filter(Boolean);
       for (const r of recipients.filter((r) => r.emailAppointments)) {
         plan(r, "APPOINTMENT", `appt:${a.id}:${stage}:${a.startsAt.toISOString()}:${r.id}`, () =>
-          appointmentEmail({ ...who(r), stage, title: a.title, when, doctor: a.doctorName, location: a.location, questions, transport: a.transport }),
+          appointmentEmail({
+            ...who(r),
+            stage,
+            title: a.title,
+            when,
+            doctor: a.doctorName,
+            location: a.location,
+            questions,
+            transport: a.transport,
+          }),
         );
       }
     }
@@ -207,7 +292,9 @@ export async function runReminderSweep(opts: { db: PrismaClient; mailer: Mailer;
       const runsOutOn = DateTime.fromISO(forecast.runsOutOn).toFormat("d LLL");
       const daysLeft = forecast.daysLeft;
       for (const r of recipients.filter((r) => r.emailRefills && !quiet(r))) {
-        plan(r, "REFILL", `refill:${med.id}:${week}:${r.id}`, () => refillEmail({ ...who(r), medicine: doseLine(med).name, daysLeft, runsOutOn }));
+        plan(r, "REFILL", `refill:${med.id}:${week}:${r.id}`, () =>
+          refillEmail({ ...who(r), medicine: doseLine(med).name, daysLeft, runsOutOn }),
+        );
       }
     }
 
@@ -216,30 +303,52 @@ export async function runReminderSweep(opts: { db: PrismaClient; mailer: Mailer;
     const digestTo = recipients.filter((r) => r.emailDailyDigest && !quiet(r));
     if (localNow.hour >= DIGEST_HOUR && digestTo.length > 0) {
       const day = localDayBounds(now, zone);
-      const todays = scheduleFor(profile.medications, zone, day.start, now).filter((o) => o.scheduledFor >= medById.get(o.medicationId)!.scheduleChangedAt);
+      const todays = scheduleFor(profile.medications, zone, day.start, now).filter(
+        (o) => o.scheduledFor >= medById.get(o.medicationId)!.scheduleChangedAt,
+      );
       const statusOf = new Map(doseLogsHere.map((l) => [doseKey(l.medicationId, l.scheduledFor), l.status]));
       const taken = todays.filter((o) => statusOf.get(doseKey(o.medicationId, o.scheduledFor)) === "TAKEN").length;
       const missed = todays
         .filter((o) => {
           const s = statusOf.get(doseKey(o.medicationId, o.scheduledFor));
-          return s === "MISSED" || (s === undefined && now.getTime() - o.scheduledFor.getTime() > policy.nudgeAfterMin * 60_000);
+          return (
+            s === "MISSED" ||
+            (s === undefined && now.getTime() - o.scheduledFor.getTime() > policy.nudgeAfterMin * MINUTE_MS)
+          );
         })
         .map((o) => `${doseLine(medById.get(o.medicationId)!).name} at ${formatClock(o.localTime)}`);
       const upcoming = (apptsBy.get(profile.id) ?? [])
-        .filter((a) => a.startsAt >= day.end && a.startsAt.getTime() < day.end.getTime() + 86_400_000)
+        .filter((a) => a.startsAt >= day.end && a.startsAt.getTime() < day.end.getTime() + DAY_MS)
         .map((a) => `${a.title}, ${DateTime.fromJSDate(a.startsAt, { zone }).toFormat("h:mm a")} tomorrow`);
       const readings = (routineLogsBy.get(profile.id) ?? [])
-        .filter((l) => l.status === "DONE" && l.scheduledFor >= day.start && l.scheduledFor < day.end && routineById.has(l.routineId))
+        .filter(
+          (l) =>
+            l.status === "DONE" &&
+            l.scheduledFor >= day.start &&
+            l.scheduledFor < day.end &&
+            routineById.has(l.routineId),
+        )
         .map((l) => {
-          const kind = routineById.get(l.routineId)!.kind as RoutineKind;
+          const kind = toRoutineKind(routineById.get(l.routineId)!.kind);
           const text = formatReading(kind, l);
-          return text ? `${ROUTINE_KIND_LABEL[kind]} ${text}${l.flag !== "NORMAL" ? ` (${l.flag.toLowerCase()})` : ""}` : "";
+          return text
+            ? `${ROUTINE_KIND_LABEL[kind]} ${text}${l.flag !== "NORMAL" ? ` (${l.flag.toLowerCase()})` : ""}`
+            : "";
         })
         .filter(Boolean);
       const dateLabel = localNow.toFormat("d LLLL");
       for (const r of digestTo) {
         plan(r, "DAILY_DIGEST", `digest:${profile.id}:${localNow.toISODate()}:${r.id}`, () =>
-          dailyDigestEmail({ ...who(r), date: dateLabel, taken, due: todays.length, missed, upcoming, lowStock, readings }),
+          dailyDigestEmail({
+            ...who(r),
+            date: dateLabel,
+            taken,
+            due: todays.length,
+            missed,
+            upcoming,
+            lowStock,
+            readings,
+          }),
         );
       }
     }
@@ -258,7 +367,14 @@ export async function runReminderSweep(opts: { db: PrismaClient; mailer: Mailer;
       continue;
     }
     sent.add(p.key);
-    const outcome = await deliver(db, mailer, { profileId: p.profileId, memberId: p.recipient.id, to: p.recipient.email!, kind: p.kind, dedupeKey: p.key, email: p.render() });
+    const outcome = await deliver(db, mailer, {
+      profileId: p.profileId,
+      memberId: p.recipient.id,
+      to: p.recipient.email!,
+      kind: p.kind,
+      dedupeKey: p.key,
+      email: p.render(),
+    });
     result.emails[outcome]++;
   }
 

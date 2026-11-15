@@ -31,7 +31,8 @@ const FLAG_BADGE: Record<VitalFlag, { tone: "sage" | "amber" | "rose"; label: st
   URGENT: { tone: "rose", label: "Urgent" },
 };
 
-const numberInput = "min-h-12 w-24 rounded-xl border border-line-2 bg-surface px-3 text-lg tabular-nums focus:border-sky-500 focus:outline-none";
+const numberInput =
+  "min-h-12 w-24 rounded-xl border border-line-2 bg-surface px-3 text-lg tabular-nums focus:border-sky-500 focus:outline-none";
 
 function Hidden({ data, status }: { data: RoutineCardData; status: "DONE" | "SKIPPED" }) {
   return (
@@ -52,7 +53,10 @@ export function RoutineCard({ data }: { data: RoutineCardData }) {
   const done = data.status !== null;
 
   return (
-    <article aria-labelledby={titleId} className={`rounded-2xl border p-4 sm:p-5 ${data.status === "DONE" ? "border-sage-100 bg-sage-100/40" : data.status === "SKIPPED" ? "border-line bg-paper-2" : "border-line bg-surface"}`}>
+    <article
+      aria-labelledby={titleId}
+      className={`rounded-2xl border p-4 sm:p-5 ${data.status === "DONE" ? "border-sage-100 bg-sage-100/40" : data.status === "SKIPPED" ? "border-line bg-paper-2" : "border-line bg-surface"}`}
+    >
       <div className="flex gap-4">
         <span className="w-16 shrink-0 pt-0.5 text-center text-sm font-bold">{data.timeLabel}</span>
         <div className="min-w-0 flex-1">
@@ -86,12 +90,30 @@ export function RoutineCard({ data }: { data: RoutineCardData }) {
                   <>
                     <label className="flex flex-col gap-1 text-sm font-semibold">
                       Top (systolic)
-                      <input name="systolic" type="number" inputMode="numeric" required min={READING_RANGE.systolic[0]} max={READING_RANGE.systolic[1]} className={numberInput} />
+                      <input
+                        name="systolic"
+                        type="number"
+                        inputMode="numeric"
+                        required
+                        min={READING_RANGE.systolic[0]}
+                        max={READING_RANGE.systolic[1]}
+                        className={numberInput}
+                      />
                     </label>
-                    <span aria-hidden="true" className="pb-3 text-2xl text-ink-3">/</span>
+                    <span aria-hidden="true" className="pb-3 text-2xl text-ink-3">
+                      /
+                    </span>
                     <label className="flex flex-col gap-1 text-sm font-semibold">
                       Bottom (diastolic)
-                      <input name="diastolic" type="number" inputMode="numeric" required min={READING_RANGE.diastolic[0]} max={READING_RANGE.diastolic[1]} className={numberInput} />
+                      <input
+                        name="diastolic"
+                        type="number"
+                        inputMode="numeric"
+                        required
+                        min={READING_RANGE.diastolic[0]}
+                        max={READING_RANGE.diastolic[1]}
+                        className={numberInput}
+                      />
                     </label>
                   </>
                 )}
@@ -101,7 +123,13 @@ export function RoutineCard({ data }: { data: RoutineCardData }) {
                     <input name="value" type="number" inputMode="decimal" step="0.1" required className={numberInput} />
                   </label>
                 )}
-                <SubmitButton variant="success" size="lg" icon="check" pendingLabel="Saving…" aria-describedby={titleId}>
+                <SubmitButton
+                  variant="success"
+                  size="lg"
+                  icon="check"
+                  pendingLabel="Saving…"
+                  aria-describedby={titleId}
+                >
                   {measured ? "Save reading" : "Done"}
                 </SubmitButton>
               </form>

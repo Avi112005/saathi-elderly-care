@@ -10,7 +10,13 @@ import { applyMedicationChange, describeChange, recordDose, undoDose } from "@/l
 import { logActivity } from "@/lib/server/audit";
 import { deliver, getMailer, appUrl } from "@/lib/email/mailer";
 import { changeRequestEmail } from "@/lib/email/templates";
-import { doseLogSchema, fieldErrors, formToObject, medicationSchema, type MedicationInput } from "@/lib/validation/schemas";
+import {
+  doseLogSchema,
+  fieldErrors,
+  formToObject,
+  medicationSchema,
+  type MedicationInput,
+} from "@/lib/validation/schemas";
 import { fail, ok, type ActionState } from "@/lib/actions";
 import type { ChangeKind } from "@/lib/domain/types";
 
@@ -19,7 +25,11 @@ function revalidateCare() {
 }
 
 /** Either applies the change or, under consent mode, files it for the elder's approval. */
-async function submitChange(kind: ChangeKind, medicationId: string | null, input: MedicationInput | null): Promise<"applied" | "requested"> {
+async function submitChange(
+  kind: ChangeKind,
+  medicationId: string | null,
+  input: MedicationInput | null,
+): Promise<"applied" | "requested"> {
   const actor = await authorize("medication:edit");
   const elder = await prisma.member.findFirst({ where: { profileId: actor.profileId, role: "ELDER", active: true } });
 
@@ -28,13 +38,27 @@ async function submitChange(kind: ChangeKind, medicationId: string | null, input
     return "applied";
   }
 
-  const existing = medicationId ? await prisma.medication.findFirst({ where: { id: medicationId, profileId: actor.profileId } }) : null;
+  const existing = medicationId
+    ? await prisma.medication.findFirst({ where: { id: medicationId, profileId: actor.profileId } })
+    : null;
   if (medicationId && !existing) throw new AuthorizationError("That medicine is not part of this care circle.");
   const summary = describeChange(kind, input, existing);
   await prisma.changeRequest.create({
-    data: { profileId: actor.profileId, kind, medicationId, payload: JSON.stringify(input), summary, requestedById: actor.id },
+    data: {
+      profileId: actor.profileId,
+      kind,
+      medicationId,
+      payload: JSON.stringify(input),
+      summary,
+      requestedById: actor.id,
+    },
   });
-  await logActivity({ profileId: actor.profileId, actorId: actor.id, action: "request.created", summary: `${actor.name} asked to ${summary}` });
+  await logActivity({
+    profileId: actor.profileId,
+    actorId: actor.id,
+    action: "request.created",
+    summary: `${actor.name} asked to ${summary}`,
+  });
 
   if (elder?.email) {
     await deliver(prisma, getMailer(), {
@@ -43,7 +67,14 @@ async function submitChange(kind: ChangeKind, medicationId: string | null, input
       to: elder.email,
       kind: "CHANGE_REQUEST",
       dedupeKey: `change:${actor.profileId}:${Date.now()}:${elder.id}`,
-      email: changeRequestEmail({ recipientName: elder.name, elderName: actor.profile.preferredName, toElder: true, appUrl: appUrl(), requester: actor.name, summary }),
+      email: changeRequestEmail({
+        recipientName: elder.name,
+        elderName: actor.profile.preferredName,
+        toElder: true,
+        appUrl: appUrl(),
+        requester: actor.name,
+        summary,
+      }),
     });
   }
   return "requested";
@@ -69,7 +100,9 @@ export async function stopMedication(_prev: ActionState, form: FormData): Promis
     if (!id) return fail("Missing medicine.");
     const outcome = await submitChange("ARCHIVE", id, null);
     revalidateCare();
-    return ok(outcome === "requested" ? "Sent for approval — the elder will decide." : "Medicine stopped. Its history is kept.");
+    return ok(
+      outcome === "requested" ? "Sent for approval — the elder will decide." : "Medicine stopped. Its history is kept.",
+    );
   });
 }
 
@@ -103,7 +136,13 @@ export async function undoDoseAction(_prev: ActionState, form: FormData): Promis
     const medicationId = String(form.get("medicationId") ?? "");
     const at = new Date(String(form.get("scheduledFor") ?? ""));
     if (!medicationId || Number.isNaN(at.getTime())) return fail("Could not undo.");
-    await undoDose(prisma, { profileId: actor.profileId, timezone: actor.profile.timezone, medicationId, scheduledFor: at, actorId: actor.id });
+    await undoDose(prisma, {
+      profileId: actor.profileId,
+      timezone: actor.profile.timezone,
+      medicationId,
+      scheduledFor: at,
+      actorId: actor.id,
+    });
     revalidateCare();
     return ok("Undone");
   });
@@ -119,7 +158,12 @@ export async function addStock(_prev: ActionState, form: FormData): Promise<Acti
     const med = await prisma.medication.findFirst({ where: { id, profileId: actor.profileId } });
     if (!med) return fail("Medicine not found.");
     await prisma.medication.update({ where: { id }, data: { stockCount: (med.stockCount ?? 0) + amount } });
-    await logActivity({ profileId: actor.profileId, actorId: actor.id, action: "medication.restocked", summary: `Added ${amount} to ${med.name} stock` });
+    await logActivity({
+      profileId: actor.profileId,
+      actorId: actor.id,
+      action: "medication.restocked",
+      summary: `Added ${amount} to ${med.name} stock`,
+    });
     revalidateCare();
     return ok(`Stock updated: ${(med.stockCount ?? 0) + amount} on hand`);
   });

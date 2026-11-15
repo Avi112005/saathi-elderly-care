@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { appointmentEmail, dailyDigestEmail, doseMissedEmail, doseUpcomingEmail, escapeHtml, safeSubject } from "@/lib/email/templates";
+import {
+  appointmentEmail,
+  dailyDigestEmail,
+  doseMissedEmail,
+  doseUpcomingEmail,
+  escapeHtml,
+  safeSubject,
+} from "@/lib/email/templates";
 import { clockToMinutes, dayPartOf, formatClock, isWithinQuietHours, localDayBounds } from "@/lib/domain/time";
 import { buildIcs, icsEscape } from "@/lib/domain/ics";
 import { formatDose, initials, maskEmail } from "@/lib/domain/format";
@@ -8,7 +15,12 @@ const who = { recipientName: "Rahul", elderName: "Kamala", toElder: false, appUr
 
 describe("email templates", () => {
   it("escapes user-provided text in HTML", () => {
-    const email = doseUpcomingEmail({ ...who, elderName: "<img src=x onerror=alert(1)>", time: "8:00 AM", doses: [{ name: "<b>Evil</b>", dose: "1 tablet" }] });
+    const email = doseUpcomingEmail({
+      ...who,
+      elderName: "<img src=x onerror=alert(1)>",
+      time: "8:00 AM",
+      doses: [{ name: "<b>Evil</b>", dose: "1 tablet" }],
+    });
     expect(email.html).not.toContain("<img src=x");
     expect(email.html).not.toContain("<b>Evil</b>");
     expect(email.html).toContain("&lt;b&gt;Evil&lt;/b&gt;");
@@ -21,29 +33,58 @@ describe("email templates", () => {
   });
 
   it("speaks to the elder directly and about them to others", () => {
-    const toElder = doseUpcomingEmail({ ...who, toElder: true, recipientName: "Kamala", time: "8:00 AM", doses: [{ name: "Metformin 500 mg", dose: "1 tablet" }] });
+    const toElder = doseUpcomingEmail({
+      ...who,
+      toElder: true,
+      recipientName: "Kamala",
+      time: "8:00 AM",
+      doses: [{ name: "Metformin 500 mg", dose: "1 tablet" }],
+    });
     expect(toElder.subject).toBe("Time for your 8:00 AM medicines");
-    const toFamily = doseUpcomingEmail({ ...who, time: "8:00 AM", doses: [{ name: "Metformin 500 mg", dose: "1 tablet" }] });
+    const toFamily = doseUpcomingEmail({
+      ...who,
+      time: "8:00 AM",
+      doses: [{ name: "Metformin 500 mg", dose: "1 tablet" }],
+    });
     expect(toFamily.subject).toBe("Kamala's 8:00 AM medicines are coming up");
     expect(toFamily.text).toContain("• Metformin 500 mg — 1 tablet");
     expect(toFamily.text).toContain("https://saathi.example/app");
   });
 
   it("includes doctor questions and transport in appointment reminders", () => {
-    const email = appointmentEmail({ ...who, stage: "DAY_BEFORE", title: "Cardiology", when: "Sat 11:00", doctor: "Dr. Mehta", location: "Sunrise", questions: ["Reduce the sleeping tablet?"], transport: "Rahul drives" });
+    const email = appointmentEmail({
+      ...who,
+      stage: "DAY_BEFORE",
+      title: "Cardiology",
+      when: "Sat 11:00",
+      doctor: "Dr. Mehta",
+      location: "Sunrise",
+      questions: ["Reduce the sleeping tablet?"],
+      transport: "Rahul drives",
+    });
     expect(email.subject).toBe("Tomorrow: Kamala's Cardiology");
     expect(email.text).toContain("Ask: Reduce the sleeping tablet?");
     expect(email.text).toContain("Rahul drives");
   });
 
   it("summarises the day in the digest", () => {
-    const email = dailyDigestEmail({ ...who, date: "10 March", taken: 5, due: 6, missed: ["Atorvastatin at 9:00 PM"], upcoming: [], lowStock: [] });
+    const email = dailyDigestEmail({
+      ...who,
+      date: "10 March",
+      taken: 5,
+      due: 6,
+      missed: ["Atorvastatin at 9:00 PM"],
+      upcoming: [],
+      lowStock: [],
+    });
     expect(email.subject).toBe("Kamala's day — 5/6 doses taken");
     expect(email.text).toContain("(83%)");
   });
 
   it("escapes all five HTML special characters", () => {
-    expect(escapeHtml(`<a href="x" title='y'>&</a>`)).toBe("&lt;a href=&quot;x&quot; title=&#39;y&#39;&gt;&amp;&lt;/a&gt;");
+    expect(escapeHtml(`<a href="x" title='y'>&</a>`)).toBe(
+      "&lt;a href=&quot;x&quot; title=&#39;y&#39;&gt;&amp;&lt;/a&gt;",
+    );
   });
 });
 
@@ -56,7 +97,13 @@ describe("time helpers", () => {
   });
 
   it("buckets times into parts of the day", () => {
-    expect(["06:30", "08:00", "13:30", "20:00", "22:00"].map(dayPartOf)).toEqual(["Early morning", "Morning", "Afternoon", "Evening", "Night"]);
+    expect(["06:30", "08:00", "13:30", "20:00", "22:00"].map(dayPartOf)).toEqual([
+      "Early morning",
+      "Morning",
+      "Afternoon",
+      "Evening",
+      "Night",
+    ]);
   });
 
   it("handles quiet hours that wrap past midnight", () => {
@@ -92,7 +139,14 @@ describe("formatting", () => {
 describe("calendar export", () => {
   it("builds a valid, escaped VEVENT with a 2-hour alarm", () => {
     const ics = buildIcs(
-      { id: "a1", title: "Cardiology, follow-up; Dr. M", startsAt: new Date("2026-03-10T05:30:00.000Z"), durationMin: 30, location: "MG Road", description: "Line 1\nLine 2" },
+      {
+        id: "a1",
+        title: "Cardiology, follow-up; Dr. M",
+        startsAt: new Date("2026-03-10T05:30:00.000Z"),
+        durationMin: 30,
+        location: "MG Road",
+        description: "Line 1\nLine 2",
+      },
       new Date("2026-03-01T00:00:00.000Z"),
     );
     expect(ics).toContain("BEGIN:VEVENT");

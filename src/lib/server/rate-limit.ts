@@ -4,6 +4,8 @@
  * lockout (stored in the database) is the primary brute-force defence — this limiter
  * additionally stops one client hammering many members.
  */
+import { HOUR_MS, MINUTE_MS } from "@/lib/domain/time";
+
 export interface RateLimitResult {
   allowed: boolean;
   remaining: number;
@@ -56,25 +58,24 @@ interface Limiters {
 function createLimiters(): Limiters {
   return {
     /** Passcode attempts per client IP: 20 per 15 minutes. */
-    login: new RateLimiter(20, 15 * 60_000),
+    login: new RateLimiter(20, 15 * MINUTE_MS),
     /**
      * Passcode attempts per care circle, whatever the client IP: 40 per 15 minutes. The IP
      * comes from X-Forwarded-For, which a client can forge when no proxy overwrites it, so
      * this per-circle cap (plus per-member lockout) bounds guessing even then.
      */
-    circle: new RateLimiter(40, 15 * 60_000),
+    circle: new RateLimiter(40, 15 * MINUTE_MS),
     /** Care-code lookups per IP: 30 per 10 minutes (stops code enumeration). */
-    lookup: new RateLimiter(30, 10 * 60_000),
+    lookup: new RateLimiter(30, 10 * MINUTE_MS),
     /** Profile creation / invite redemption per IP: 10 per hour. */
-    signup: new RateLimiter(10, 60 * 60_000),
+    signup: new RateLimiter(10, HOUR_MS),
     /** Manual "send test email" / "run reminders now" per member: 10 per 10 minutes. */
-    email: new RateLimiter(10, 10 * 60_000),
+    email: new RateLimiter(10, 10 * MINUTE_MS),
   };
 }
 
 // Kept on globalThis so counters survive dev hot-reloads; any limiter added since the
 // process started is filled in rather than missing.
 const globalLimiters = globalThis as unknown as { __saathiLimiters?: Partial<Limiters> };
-globalLimiters.__saathiLimiters = { ...createLimiters(), ...globalLimiters.__saathiLimiters };
-
-export const limiters = globalLimiters.__saathiLimiters as Limiters;
+export const limiters: Limiters = { ...createLimiters(), ...globalLimiters.__saathiLimiters };
+globalLimiters.__saathiLimiters = limiters;

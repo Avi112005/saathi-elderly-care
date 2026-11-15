@@ -12,7 +12,21 @@ import type { ButtonVariant } from "@/components/ui/primitives";
 type Action = (prev: ActionState, form: FormData) => Promise<ActionState>;
 
 /** A one-button form bound to a server action, with its result announced underneath. */
-function ActionButton({ action, children, icon, variant = "secondary", pendingLabel, hidden = {} }: { action: Action; children: ReactNode; icon?: IconName; variant?: ButtonVariant; pendingLabel?: string; hidden?: Record<string, string> }) {
+function ActionButton({
+  action,
+  children,
+  icon,
+  variant = "secondary",
+  pendingLabel,
+  hidden = {},
+}: {
+  action: Action;
+  children: ReactNode;
+  icon?: IconName;
+  variant?: ButtonVariant;
+  pendingLabel?: string;
+  hidden?: Record<string, string>;
+}) {
   const [state, formAction] = useActionState(action, IDLE);
   return (
     <form action={formAction} className="flex flex-col gap-2">
@@ -59,7 +73,16 @@ export function AddStockForm({ id, unit }: { id: string; unit: string }) {
     <form action={action} className="flex flex-col gap-2">
       <input type="hidden" name="id" value={id} />
       <div className="flex items-end gap-2">
-        <TextField label={`Add ${unit}s after a refill`} name="amount" type="number" inputMode="numeric" min={1} max={1000} required className="w-44" />
+        <TextField
+          label={`Add ${unit}s after a refill`}
+          name="amount"
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={1000}
+          required
+          className="w-44"
+        />
         <SubmitButton variant="secondary" icon="box" pendingLabel="Adding…">
           Add stock
         </SubmitButton>
@@ -90,18 +113,35 @@ export function RequestDecision({ id, canDecide }: { id: string; canDecide: bool
   );
 }
 
-export function ConsentToggle({ enabled, canDisable, canEnable }: { enabled: boolean; canDisable: boolean; canEnable: boolean }) {
+export function ConsentToggle({
+  enabled,
+  canDisable,
+  canEnable,
+}: {
+  enabled: boolean;
+  canDisable: boolean;
+  canEnable: boolean;
+}) {
   const [state, action] = useActionState(setConsentMode, IDLE);
   const allowed = enabled ? canDisable : canEnable;
   return (
     <form action={action} className="flex flex-col gap-2">
       <input type="hidden" name="enable" value={enabled ? "false" : "true"} />
       <div>
-        <SubmitButton variant={enabled ? "secondary" : "primary"} disabled={!allowed} pendingLabel="Saving…" icon="heart">
+        <SubmitButton
+          variant={enabled ? "secondary" : "primary"}
+          disabled={!allowed}
+          pendingLabel="Saving…"
+          icon="heart"
+        >
           {enabled ? "Turn consent mode off" : "Turn consent mode on"}
         </SubmitButton>
       </div>
-      {!allowed && <p className="text-sm text-ink-2">{enabled ? "Only the elder can turn this off." : "Only a circle admin can turn this on."}</p>}
+      {!allowed && (
+        <p className="text-sm text-ink-2">
+          {enabled ? "Only the elder can turn this off." : "Only a circle admin can turn this on."}
+        </p>
+      )}
       <FormMessage state={state} />
     </form>
   );
@@ -130,12 +170,17 @@ export function InviteForm() {
       </form>
       {code ? (
         <div role="status" className="rounded-2xl border-2 border-dashed border-sky-300 bg-sky-50 p-5">
-          <p className="text-sm font-semibold text-sky-800">Share this invite now — it&apos;s shown only once and works for 72 hours.</p>
+          <p className="text-sm font-semibold text-sky-800">
+            Share this invite now — it&apos;s shown only once and works for 72 hours.
+          </p>
           <p className="mt-2 font-mono text-2xl tracking-wider select-all sm:text-3xl">{code}</p>
           <p className="mt-2 text-sm text-ink-2">
-            They open Saathi → “I have an invite”, enter this code and choose their own PIN. After that they sign in with care code <strong className="font-mono">{careCode}</strong>.
+            They open Saathi → “I have an invite”, enter this code and choose their own PIN. After that they sign in
+            with care code <strong className="font-mono">{careCode}</strong>.
           </p>
-          <CopyButton text={`You're invited to a Saathi care circle. Open ${typeof window !== "undefined" ? window.location.origin : ""}/join?code=${code} and choose your own PIN. Invite code: ${code}`} />
+          <CopyButton
+            text={`You're invited to a Saathi care circle. Open ${typeof window !== "undefined" ? window.location.origin : ""}/join?code=${code} and choose your own PIN. Invite code: ${code}`}
+          />
         </div>
       ) : (
         <FormMessage state={state} />

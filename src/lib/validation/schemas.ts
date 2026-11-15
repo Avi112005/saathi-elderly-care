@@ -18,7 +18,12 @@ const textBase = (max: number) => z.string().trim().max(max, `Keep this under ${
  * when an elder sets up their own circle) is treated as empty rather than invalid.
  */
 const text = (max: number) => textBase(max).default("");
-const requiredText = (label: string, max: number) => z.string({ error: `${label} is required` }).trim().min(1, `${label} is required`).max(max, `Keep this under ${max} characters`);
+const requiredText = (label: string, max: number) =>
+  z
+    .string({ error: `${label} is required` })
+    .trim()
+    .min(1, `${label} is required`)
+    .max(max, `Keep this under ${max} characters`);
 
 export const optionalEmailSchema = z
   .string()
@@ -63,9 +68,32 @@ const timezone = z.string().trim().refine(isValidTimeZone, "Choose a valid time 
  * ------------------------------------------------------------------------- */
 
 const COMMON_PINS = new Set([
-  "123456", "654321", "000000", "111111", "121212", "112233", "123123", "123321", "696969",
-  "159753", "147258", "102030", "999999", "555555", "777777", "888888", "222222", "666666",
-  "444444", "333333", "131313", "202020", "246810", "101010", "212121", "010101",
+  "123456",
+  "654321",
+  "000000",
+  "111111",
+  "121212",
+  "112233",
+  "123123",
+  "123321",
+  "696969",
+  "159753",
+  "147258",
+  "102030",
+  "999999",
+  "555555",
+  "777777",
+  "888888",
+  "222222",
+  "666666",
+  "444444",
+  "333333",
+  "131313",
+  "202020",
+  "246810",
+  "101010",
+  "212121",
+  "010101",
 ]);
 
 /** Explains why a PIN is too weak, or returns null when it is acceptable. */
@@ -79,13 +107,19 @@ export function pinWeakness(pin: string): string | null {
   return null;
 }
 
-export const pinSchema = z.string().trim().superRefine((pin, ctx) => {
-  const problem = pinWeakness(pin);
-  if (problem) ctx.addIssue({ code: "custom", message: problem });
-});
+export const pinSchema = z
+  .string()
+  .trim()
+  .superRefine((pin, ctx) => {
+    const problem = pinWeakness(pin);
+    if (problem) ctx.addIssue({ code: "custom", message: problem });
+  });
 
 /** Login only checks shape — strength is enforced when a PIN is set. */
-export const pinAttemptSchema = z.string().trim().regex(/^\d{4,8}$/, "Enter your PIN using digits");
+export const pinAttemptSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{4,8}$/, "Enter your PIN using digits");
 
 function confirmPins<T extends { pin: string; confirmPin: string }>(value: T, ctx: z.RefinementCtx) {
   if (value.pin !== value.confirmPin) {
@@ -136,7 +170,8 @@ export const createCircleSchema = z
       if (v.elderPin) {
         const problem = pinWeakness(v.elderPin);
         if (problem) ctx.addIssue({ code: "custom", path: ["elderPin"], message: problem });
-        else if (v.elderPin === v.pin) ctx.addIssue({ code: "custom", path: ["elderPin"], message: "Give them a different PIN from yours" });
+        else if (v.elderPin === v.pin)
+          ctx.addIssue({ code: "custom", path: ["elderPin"], message: "Give them a different PIN from yours" });
       }
     }
   });
@@ -231,8 +266,10 @@ export const routineSchema = z
     notes: text(300),
   })
   .superRefine((v, ctx) => {
-    if (v.endDate && v.endDate < v.startDate) ctx.addIssue({ code: "custom", path: ["endDate"], message: "End date must be after the start date" });
-    if (new Set(v.times).size !== v.times.length) ctx.addIssue({ code: "custom", path: ["times"], message: "Each time should appear once" });
+    if (v.endDate && v.endDate < v.startDate)
+      ctx.addIssue({ code: "custom", path: ["endDate"], message: "End date must be after the start date" });
+    if (new Set(v.times).size !== v.times.length)
+      ctx.addIssue({ code: "custom", path: ["times"], message: "Each time should appear once" });
   });
 
 export type RoutineInput = z.infer<typeof routineSchema>;
@@ -264,7 +301,10 @@ export const routineLogSchema = z.object({
 export type RoutineLogInput = z.infer<typeof routineLogSchema>;
 
 /** Checks that a reading is present and plausible for the routine's kind. */
-export function readingProblem(kind: (typeof ROUTINE_KINDS)[number], r: Pick<RoutineLogInput, "systolic" | "diastolic" | "value" | "status">): string | null {
+export function readingProblem(
+  kind: (typeof ROUTINE_KINDS)[number],
+  r: Pick<RoutineLogInput, "systolic" | "diastolic" | "value" | "status">,
+): string | null {
   if (r.status === "SKIPPED" || kind === "ACTIVITY") return null;
   if (kind === "BLOOD_PRESSURE") {
     if (r.systolic === null || r.diastolic === null) return "Enter both blood-pressure numbers";
@@ -272,7 +312,9 @@ export function readingProblem(kind: (typeof ROUTINE_KINDS)[number], r: Pick<Rou
     return null;
   }
   if (r.value === null) return "Enter the reading";
-  return inRange(r.value, READING_RANGE[kind]) ? null : `That reading looks wrong (${READING_RANGE[kind][0]}–${READING_RANGE[kind][1]})`;
+  return inRange(r.value, READING_RANGE[kind])
+    ? null
+    : `That reading looks wrong (${READING_RANGE[kind][0]}–${READING_RANGE[kind][1]})`;
 }
 
 /* ----------------------------------------------------------------------------
@@ -347,11 +389,18 @@ export const profileSchema = z
     escalateAfterMin: z.coerce.number().int(),
   })
   .superRefine((v, ctx) => {
-    if (!isValidPolicy({ leadMin: v.reminderLeadMin, nudgeAfterMin: v.nudgeAfterMin, escalateAfterMin: v.escalateAfterMin })) {
+    if (
+      !isValidPolicy({
+        leadMin: v.reminderLeadMin,
+        nudgeAfterMin: v.nudgeAfterMin,
+        escalateAfterMin: v.escalateAfterMin,
+      })
+    ) {
       ctx.addIssue({
         code: "custom",
         path: ["escalateAfterMin"],
-        message: "The ladder must climb: reminder 0–120 min before, nudge at least 5 min after, escalation later than the nudge (max 12 h).",
+        message:
+          "The ladder must climb: reminder 0–120 min before, nudge at least 5 min after, escalation later than the nudge (max 12 h).",
       });
     }
   });

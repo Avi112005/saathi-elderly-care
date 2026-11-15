@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { clockToMinutes, isClockTime } from "./time";
+import { clockToMinutes, DAY_MS, HOUR_MS, isClockTime, MINUTE_MS } from "./time";
 
 /** The scheduling-relevant slice of a medication. */
 export interface MedicationSchedule {
@@ -70,7 +70,8 @@ export function occurrencesBetween(med: MedicationSchedule, zone: string, from: 
 
   while (cursor <= last) {
     const localDate = cursor.toISODate();
-    const inRange = localDate !== null && localDate >= med.startDate && (med.endDate === null || localDate <= med.endDate);
+    const inRange =
+      localDate !== null && localDate >= med.startDate && (med.endDate === null || localDate <= med.endDate);
     if (inRange && days.has(cursor.weekday)) {
       for (const time of times) {
         const minutes = clockToMinutes(time);
@@ -90,7 +91,9 @@ export function occurrencesBetween(med: MedicationSchedule, zone: string, from: 
 export function scheduleFor(meds: MedicationSchedule[], zone: string, from: Date, to: Date): DoseOccurrence[] {
   return meds
     .flatMap((m) => occurrencesBetween(m, zone, from, to))
-    .sort((a, b) => a.scheduledFor.getTime() - b.scheduledFor.getTime() || a.medicationId.localeCompare(b.medicationId));
+    .sort(
+      (a, b) => a.scheduledFor.getTime() - b.scheduledFor.getTime() || a.medicationId.localeCompare(b.medicationId),
+    );
 }
 
 /**
@@ -98,9 +101,23 @@ export function scheduleFor(meds: MedicationSchedule[], zone: string, from: Date
  * logs for times the medication was never scheduled.
  */
 export function isScheduledInstant(med: MedicationSchedule, zone: string, instant: Date): boolean {
-  const from = new Date(instant.getTime() - 60_000);
-  const to = new Date(instant.getTime() + 60_000);
+  const from = new Date(instant.getTime() - MINUTE_MS);
+  const to = new Date(instant.getTime() + MINUTE_MS);
   return occurrencesBetween(med, zone, from, to).some((o) => o.scheduledFor.getTime() === instant.getTime());
+}
+
+/** A dose or routine can be recorded up to 3 hours early and up to 3 days late. */
+export const LOG_EARLY_LIMIT_MS = 3 * HOUR_MS;
+export const LOG_LATE_LIMIT_MS = 3 * DAY_MS;
+
+export type LogWindowError = "too-early" | "too-old";
+
+/** Whether an item scheduled for `scheduledFor` can be recorded at `now`. */
+export function logWindowError(scheduledFor: Date, now: Date): LogWindowError | null {
+  const delta = scheduledFor.getTime() - now.getTime();
+  if (delta > LOG_EARLY_LIMIT_MS) return "too-early";
+  if (-delta > LOG_LATE_LIMIT_MS) return "too-old";
+  return null;
 }
 
 export interface RefillForecast {

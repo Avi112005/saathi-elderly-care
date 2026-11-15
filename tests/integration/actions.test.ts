@@ -41,7 +41,9 @@ const { IDLE } = await import("@/lib/actions");
 
 async function signInAs(memberId: string) {
   const token = generateToken();
-  await db.session.create({ data: { tokenHash: sha256(token), memberId, expiresAt: new Date(Date.now() + 86_400_000) } });
+  await db.session.create({
+    data: { tokenHash: sha256(token), memberId, expiresAt: new Date(Date.now() + 86_400_000) },
+  });
   jar.set(SESSION_COOKIE, token);
   return token;
 }
@@ -81,14 +83,19 @@ afterAll(() => db.$disconnect());
 
 describe("authentication and authorisation", () => {
   it("refuses every action without a session", async () => {
-    const res = await logDose(IDLE, form({ medicationId: "x", scheduledFor: new Date().toISOString(), status: "TAKEN" }));
+    const res = await logDose(
+      IDLE,
+      form({ medicationId: "x", scheduledFor: new Date().toISOString(), status: "TAKEN" }),
+    );
     expect(res).toMatchObject({ status: "error", message: expect.stringMatching(/session has ended/) });
   });
 
   it("refuses an expired session", async () => {
     const { family } = await makeCircle();
     const token = generateToken();
-    await db.session.create({ data: { tokenHash: sha256(token), memberId: family.id, expiresAt: new Date(Date.now() - 1000) } });
+    await db.session.create({
+      data: { tokenHash: sha256(token), memberId: family.id, expiresAt: new Date(Date.now() - 1000) },
+    });
     jar.set(SESSION_COOKIE, token);
     expect(await inviteMember(IDLE, form({ role: "FAMILY", label: "" }))).toMatchObject({ status: "error" });
   });
@@ -96,7 +103,10 @@ describe("authentication and authorisation", () => {
   it("enforces roles: family cannot change medicines or invite people", async () => {
     const { family } = await makeCircle();
     await signInAs(family.id);
-    expect(await saveMedication(IDLE, medForm())).toMatchObject({ status: "error", message: expect.stringMatching(/permission/) });
+    expect(await saveMedication(IDLE, medForm())).toMatchObject({
+      status: "error",
+      message: expect.stringMatching(/permission/),
+    });
     expect(await inviteMember(IDLE, form({ role: "FAMILY", label: "" }))).toMatchObject({ status: "error" });
     expect(await db.medication.count()).toBe(0);
   });
@@ -104,7 +114,9 @@ describe("authentication and authorisation", () => {
   it("scopes every lookup to the signed-in circle (no IDOR)", async () => {
     const a = await makeCircle();
     const b = await makeCircle();
-    const foreign = await db.medication.create({ data: { profileId: b.profile.id, name: "Warfarin", times: "20:00", startDate: "2026-01-01" } });
+    const foreign = await db.medication.create({
+      data: { profileId: b.profile.id, name: "Warfarin", times: "20:00", startDate: "2026-01-01" },
+    });
     await signInAs(a.elder.id);
     await expect(stopMedication(IDLE, form({ id: foreign.id }))).rejects.toThrow();
     expect((await db.medication.findUniqueOrThrow({ where: { id: foreign.id } })).active).toBe(true);
@@ -123,13 +135,19 @@ describe("consent mode", () => {
     expect(await db.notification.count({ where: { kind: "CHANGE_REQUEST" } })).toBe(1);
 
     // The caretaker can't approve their own request…
-    expect(await decideRequest(IDLE, form({ id: request.id, decision: "APPROVED" }))).toMatchObject({ status: "error" });
+    expect(await decideRequest(IDLE, form({ id: request.id, decision: "APPROVED" }))).toMatchObject({
+      status: "error",
+    });
 
     // …the elder can, exactly once.
     jar.clear();
     await signInAs(elder.id);
-    expect(await decideRequest(IDLE, form({ id: request.id, decision: "APPROVED" }))).toMatchObject({ status: "success" });
-    expect(await decideRequest(IDLE, form({ id: request.id, decision: "APPROVED" }))).toMatchObject({ status: "error" });
+    expect(await decideRequest(IDLE, form({ id: request.id, decision: "APPROVED" }))).toMatchObject({
+      status: "success",
+    });
+    expect(await decideRequest(IDLE, form({ id: request.id, decision: "APPROVED" }))).toMatchObject({
+      status: "error",
+    });
     expect(await db.medication.count({ where: { name: "Vitamin B12" } })).toBe(1);
   });
 
@@ -159,7 +177,9 @@ describe("sign-in and PIN changes", () => {
     const wrong = await signIn(IDLE, form({ careCode: profile.careCode, memberId: elder.id, pin: TEST_PIN_2 }));
     expect(wrong).toMatchObject({ status: "error", fieldErrors: { pin: ["Incorrect PIN"] } });
 
-    await expect(signIn(IDLE, form({ careCode: profile.careCode, memberId: elder.id, pin: TEST_PIN }))).rejects.toMatchObject({ url: "/app" });
+    await expect(
+      signIn(IDLE, form({ careCode: profile.careCode, memberId: elder.id, pin: TEST_PIN })),
+    ).rejects.toMatchObject({ url: "/app" });
     const token = jar.get(SESSION_COOKIE)!;
     expect(token).toBeTruthy();
     const session = await db.session.findUniqueOrThrow({ where: { tokenHash: sha256(token) } });
@@ -169,7 +189,12 @@ describe("sign-in and PIN changes", () => {
   it("only redirects to in-app paths after sign-in", async () => {
     const { profile, elder } = await makeCircle();
     await db.member.update({ where: { id: elder.id }, data: { passcodeHash: await hashPasscode(TEST_PIN) } });
-    await expect(signIn(IDLE, form({ careCode: profile.careCode, memberId: elder.id, pin: TEST_PIN, next: "https://evil.example/app" }))).rejects.toMatchObject({ url: "/app" });
+    await expect(
+      signIn(
+        IDLE,
+        form({ careCode: profile.careCode, memberId: elder.id, pin: TEST_PIN, next: "https://evil.example/app" }),
+      ),
+    ).rejects.toMatchObject({ url: "/app" });
   });
 
   it("signs out other devices when a PIN changes", async () => {
@@ -179,7 +204,9 @@ describe("sign-in and PIN changes", () => {
     const current = await signInAs(elder.id);
     const res = await changePin(IDLE, form({ currentPin: TEST_PIN, pin: TEST_PIN_2, confirmPin: TEST_PIN_2 }));
     expect(res).toMatchObject({ status: "success", message: expect.stringMatching(/Signed out 1 other device/) });
-    expect((await db.session.findMany({ where: { memberId: elder.id } })).map((s) => s.tokenHash)).toEqual([sha256(current)]);
+    expect((await db.session.findMany({ where: { memberId: elder.id } })).map((s) => s.tokenHash)).toEqual([
+      sha256(current),
+    ]);
   });
 });
 
@@ -188,10 +215,30 @@ describe("health readings", () => {
     const { profile, elder } = await makeCircle();
     const now = new Date();
     const hhmm = `${String(now.getUTCHours()).padStart(2, "0")}:${String(now.getUTCMinutes()).padStart(2, "0")}`;
-    const routine = await db.routine.create({ data: { profileId: profile.id, title: "Check blood pressure", kind: "BLOOD_PRESSURE", times: hhmm, startDate: "2026-01-01", scheduleChangedAt: new Date(0) } });
-    const at = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours(), now.getUTCMinutes()));
+    const routine = await db.routine.create({
+      data: {
+        profileId: profile.id,
+        title: "Check blood pressure",
+        kind: "BLOOD_PRESSURE",
+        times: hhmm,
+        startDate: "2026-01-01",
+        scheduleChangedAt: new Date(0),
+      },
+    });
+    const at = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours(), now.getUTCMinutes()),
+    );
     await signInAs(elder.id);
-    const res = await logRoutineAction(IDLE, form({ routineId: routine.id, scheduledFor: at.toISOString(), status: "DONE", systolic: "184", diastolic: "121" }));
+    const res = await logRoutineAction(
+      IDLE,
+      form({
+        routineId: routine.id,
+        scheduledFor: at.toISOString(),
+        status: "DONE",
+        systolic: "184",
+        diastolic: "121",
+      }),
+    );
     expect(res).toMatchObject({ status: "warning", message: expect.stringMatching(/care circle has been emailed/) });
     expect(await db.notification.count({ where: { kind: "VITAL_ALERT" } })).toBe(3);
   });

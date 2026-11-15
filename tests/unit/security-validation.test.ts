@@ -1,7 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { CARE_CODE_PATTERN, formatCareCode, formatInviteCode, generateCareCode, generateInviteCode, generateToken, hashPasscode, sha256, verifyPasscode } from "@/lib/server/crypto";
+import {
+  CARE_CODE_PATTERN,
+  formatCareCode,
+  formatInviteCode,
+  generateCareCode,
+  generateInviteCode,
+  generateToken,
+  hashPasscode,
+  sha256,
+  verifyPasscode,
+} from "@/lib/server/crypto";
 import { RateLimiter } from "@/lib/server/rate-limit";
-import { careCodeSchema, createCircleSchema, fieldErrors, formToObject, joinSchema, medicationSchema, memberSettingsSchema, pinWeakness, profileSchema } from "@/lib/validation/schemas";
+import {
+  careCodeSchema,
+  createCircleSchema,
+  fieldErrors,
+  formToObject,
+  joinSchema,
+  medicationSchema,
+  memberSettingsSchema,
+  pinWeakness,
+  profileSchema,
+} from "@/lib/validation/schemas";
 import { buildCsp } from "@/proxy";
 import { parseA11y, serializeA11y } from "@/lib/a11y";
 import { TEST_PIN, TEST_PIN_2, TEST_PIN_3, TEST_PIN_8_DIGITS } from "../fixtures";
@@ -89,7 +109,15 @@ describe("validation schemas", () => {
   };
 
   it("collects repeated form fields as arrays", () => {
-    const obj = formToObject(form([["times", "08:00"], ["times", "20:00"], ["name", "x"], ["$ACTION_ID_1", "y"]]), ["times", "daysOfWeek"]);
+    const obj = formToObject(
+      form([
+        ["times", "08:00"],
+        ["times", "20:00"],
+        ["name", "x"],
+        ["$ACTION_ID_1", "y"],
+      ]),
+      ["times", "daysOfWeek"],
+    );
     expect(obj).toEqual({ times: ["08:00", "20:00"], name: "x", daysOfWeek: [] });
   });
 
@@ -119,7 +147,13 @@ describe("validation schemas", () => {
   });
 
   it("rejects bad medicine input with field-level messages", () => {
-    const r = medicationSchema.safeParse({ ...validMed, name: " ", times: ["25:00"], pillColor: "neon", form: "<script>" });
+    const r = medicationSchema.safeParse({
+      ...validMed,
+      name: " ",
+      times: ["25:00"],
+      pillColor: "neon",
+      form: "<script>",
+    });
     expect(r.success).toBe(false);
     const errors = fieldErrors(r.error!);
     expect(Object.keys(errors).sort()).toEqual(["form", "name", "pillColor", "times"]);
@@ -135,27 +169,79 @@ describe("validation schemas", () => {
   });
 
   it("requires matching, strong PINs when creating a circle", () => {
-    const base = { setupFor: "SELF", elderFullName: "Kamala Sharma", elderPreferredName: "Kamala", dateOfBirth: "", timezone: "Asia/Kolkata", conditions: "", allergies: "", yourName: "", relationship: "", email: "", consentMode: "on" };
+    const base = {
+      setupFor: "SELF",
+      elderFullName: "Kamala Sharma",
+      elderPreferredName: "Kamala",
+      dateOfBirth: "",
+      timezone: "Asia/Kolkata",
+      conditions: "",
+      allergies: "",
+      yourName: "",
+      relationship: "",
+      email: "",
+      consentMode: "on",
+    };
     expect(createCircleSchema.safeParse({ ...base, pin: TEST_PIN, confirmPin: TEST_PIN }).success).toBe(true);
-    expect(fieldErrors(createCircleSchema.safeParse({ ...base, pin: TEST_PIN, confirmPin: `${TEST_PIN.slice(0, 5)}9` }).error!)).toHaveProperty("confirmPin");
-    expect(fieldErrors(createCircleSchema.safeParse({ ...base, pin: "123456", confirmPin: "123456" }).error!)).toHaveProperty("pin");
-    expect(createCircleSchema.safeParse({ ...base, timezone: "Mars/Olympus", pin: TEST_PIN, confirmPin: TEST_PIN }).success).toBe(false);
+    expect(
+      fieldErrors(
+        createCircleSchema.safeParse({ ...base, pin: TEST_PIN, confirmPin: `${TEST_PIN.slice(0, 5)}9` }).error!,
+      ),
+    ).toHaveProperty("confirmPin");
+    expect(
+      fieldErrors(createCircleSchema.safeParse({ ...base, pin: "123456", confirmPin: "123456" }).error!),
+    ).toHaveProperty("pin");
+    expect(
+      createCircleSchema.safeParse({ ...base, timezone: "Mars/Olympus", pin: TEST_PIN, confirmPin: TEST_PIN }).success,
+    ).toBe(false);
   });
 
   it("accepts the 'for myself' form, which has no 'your name' or 'relationship' fields (regression)", () => {
-    const selfForm = { setupFor: "SELF", elderFullName: "Meera Iyer", elderPreferredName: "Meera", dateOfBirth: "", timezone: "UTC", conditions: "", allergies: "", email: "", pin: TEST_PIN, confirmPin: TEST_PIN };
+    const selfForm = {
+      setupFor: "SELF",
+      elderFullName: "Meera Iyer",
+      elderPreferredName: "Meera",
+      dateOfBirth: "",
+      timezone: "UTC",
+      conditions: "",
+      allergies: "",
+      email: "",
+      pin: TEST_PIN,
+      confirmPin: TEST_PIN,
+    };
     expect(createCircleSchema.parse(selfForm)).toMatchObject({ yourName: "", relationship: "", consentMode: false });
   });
 
   it("requires a relative's name and a distinct elder PIN when setting up for someone else", () => {
-    const base = { setupFor: "LOVED_ONE", elderFullName: "Kamala Sharma", elderPreferredName: "Kamala", dateOfBirth: "", timezone: "UTC", conditions: "", allergies: "", relationship: "Son", email: "rahul@example.com", pin: TEST_PIN_2, confirmPin: TEST_PIN_2 };
+    const base = {
+      setupFor: "LOVED_ONE",
+      elderFullName: "Kamala Sharma",
+      elderPreferredName: "Kamala",
+      dateOfBirth: "",
+      timezone: "UTC",
+      conditions: "",
+      allergies: "",
+      relationship: "Son",
+      email: "rahul@example.com",
+      pin: TEST_PIN_2,
+      confirmPin: TEST_PIN_2,
+    };
     expect(fieldErrors(createCircleSchema.safeParse({ ...base, yourName: "" }).error!)).toHaveProperty("yourName");
-    expect(fieldErrors(createCircleSchema.safeParse({ ...base, yourName: "Rahul", elderPin: TEST_PIN_2 }).error!)).toHaveProperty("elderPin");
+    expect(
+      fieldErrors(createCircleSchema.safeParse({ ...base, yourName: "Rahul", elderPin: TEST_PIN_2 }).error!),
+    ).toHaveProperty("elderPin");
     expect(createCircleSchema.safeParse({ ...base, yourName: "Rahul", elderPin: TEST_PIN }).success).toBe(true);
   });
 
   it("normalises invite codes on join", () => {
-    const r = joinSchema.parse({ inviteCode: "join-8kd2-qf7m-4xpa", name: "Anita", relationship: "", email: "", pin: TEST_PIN, confirmPin: TEST_PIN });
+    const r = joinSchema.parse({
+      inviteCode: "join-8kd2-qf7m-4xpa",
+      name: "Anita",
+      relationship: "",
+      email: "",
+      pin: TEST_PIN,
+      confirmPin: TEST_PIN,
+    });
     expect(r.inviteCode).toBe("JOIN-8KD2-QF7M-4XPA");
   });
 
@@ -169,7 +255,20 @@ describe("validation schemas", () => {
   });
 
   it("enforces a climbing escalation ladder and valid blood groups", () => {
-    const base = { fullName: "K", preferredName: "K", dateOfBirth: "", timezone: "UTC", conditions: "", allergies: "", emergencyContact: "", primaryDoctor: "", notes: "", reminderLeadMin: "15", nudgeAfterMin: "30", escalateAfterMin: "120" };
+    const base = {
+      fullName: "K",
+      preferredName: "K",
+      dateOfBirth: "",
+      timezone: "UTC",
+      conditions: "",
+      allergies: "",
+      emergencyContact: "",
+      primaryDoctor: "",
+      notes: "",
+      reminderLeadMin: "15",
+      nudgeAfterMin: "30",
+      escalateAfterMin: "120",
+    };
     expect(profileSchema.safeParse({ ...base, bloodGroup: "O+" }).success).toBe(true);
     expect(profileSchema.safeParse({ ...base, bloodGroup: "Z+" }).success).toBe(false);
     expect(profileSchema.safeParse({ ...base, bloodGroup: "", escalateAfterMin: "20" }).success).toBe(false);
@@ -178,7 +277,10 @@ describe("validation schemas", () => {
 
 describe("display preferences cookie", () => {
   it("round-trips and ignores tampered values", () => {
-    expect(parseA11y(serializeA11y({ textSize: "xl", contrast: "high" }))).toEqual({ textSize: "xl", contrast: "high" });
+    expect(parseA11y(serializeA11y({ textSize: "xl", contrast: "high" }))).toEqual({
+      textSize: "xl",
+      contrast: "high",
+    });
     expect(parseA11y("huge.<script>")).toEqual({ textSize: "md", contrast: "normal" });
     expect(parseA11y(undefined)).toEqual({ textSize: "md", contrast: "normal" });
   });

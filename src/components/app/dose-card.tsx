@@ -54,7 +54,8 @@ function Status({ dose }: { dose: DoseCardData }) {
     case "TAKEN":
       return (
         <p className="flex items-center gap-1.5 text-sm font-semibold text-sage-700">
-          <Icon name="check" className="size-4" strokeWidth={2.5} /> Taken{dose.actedLabel ? ` at ${dose.actedLabel}` : ""}
+          <Icon name="check" className="size-4" strokeWidth={2.5} /> Taken
+          {dose.actedLabel ? ` at ${dose.actedLabel}` : ""}
           {dose.loggedBy ? ` · ${dose.loggedBy}` : ""}
         </p>
       );
@@ -87,10 +88,14 @@ export function DoseCard({ dose }: { dose: DoseCardData }) {
   const [skipping, setSkipping] = useState(false);
   const done = dose.state === "TAKEN" || dose.state === "SKIPPED";
   const titleId = `dose-${dose.medicationId}-${dose.scheduledFor}`;
-  const error = logState.status === "error" ? logState.message : undoState.status === "error" ? undoState.message : null;
+  const error =
+    logState.status === "error" ? logState.message : undoState.status === "error" ? undoState.message : null;
 
   return (
-    <article aria-labelledby={titleId} className={`rounded-2xl border p-4 transition-colors sm:p-5 ${STATE_STYLE[dose.state]}`}>
+    <article
+      aria-labelledby={titleId}
+      className={`rounded-2xl border p-4 transition-colors sm:p-5 ${STATE_STYLE[dose.state]}`}
+    >
       <div className="flex gap-4">
         <div className="flex w-16 shrink-0 flex-col items-center gap-2 pt-0.5">
           <span className="text-sm font-bold text-ink">{dose.timeLabel}</span>
@@ -110,7 +115,9 @@ export function DoseCard({ dose }: { dose: DoseCardData }) {
             {dose.foodLabel && <span className="text-ink-2"> · {dose.foodLabel}</span>}
           </p>
           {(dose.purpose || dose.appearance) && (
-            <p className="mt-0.5 text-sm text-ink-2">{[dose.purpose && `For ${dose.purpose.toLowerCase()}`, dose.appearance].filter(Boolean).join(" · ")}</p>
+            <p className="mt-0.5 text-sm text-ink-2">
+              {[dose.purpose && `For ${dose.purpose.toLowerCase()}`, dose.appearance].filter(Boolean).join(" · ")}
+            </p>
           )}
           {dose.instructions && <p className="mt-1 text-sm text-amber-700">{dose.instructions}</p>}
           <div className="mt-2">
@@ -127,12 +134,23 @@ export function DoseCard({ dose }: { dose: DoseCardData }) {
                 <input type="hidden" name="medicationId" value={dose.medicationId} />
                 <input type="hidden" name="scheduledFor" value={dose.scheduledFor} />
                 <input type="hidden" name="status" value="TAKEN" />
-                <SubmitButton variant="success" size="lg" icon="check" pendingLabel="Saving…" aria-describedby={titleId}>
+                <SubmitButton
+                  variant="success"
+                  size="lg"
+                  icon="check"
+                  pendingLabel="Saving…"
+                  aria-describedby={titleId}
+                >
                   {dose.state === "MISSED" ? "Taken (late)" : "Taken"}
                 </SubmitButton>
               </form>
               {dose.state !== "MISSED" && (
-                <button type="button" onClick={() => setSkipping(true)} className="min-h-14 rounded-2xl px-4 font-semibold text-ink-2 hover:bg-paper-2" aria-describedby={titleId}>
+                <button
+                  type="button"
+                  onClick={() => setSkipping(true)}
+                  className="min-h-14 rounded-2xl px-4 font-semibold text-ink-2 hover:bg-paper-2"
+                  aria-describedby={titleId}
+                >
                   Skip
                 </button>
               )}
@@ -145,7 +163,11 @@ export function DoseCard({ dose }: { dose: DoseCardData }) {
               <input type="hidden" name="status" value="SKIPPED" />
               <label className="flex flex-col gap-1 text-sm font-semibold">
                 Why skip this dose?
-                <select name="note" className="min-h-11 rounded-xl border border-line-2 bg-surface px-3 font-normal" defaultValue={SKIP_REASONS[0]}>
+                <select
+                  name="note"
+                  className="min-h-11 rounded-xl border border-line-2 bg-surface px-3 font-normal"
+                  defaultValue={SKIP_REASONS[0]}
+                >
                   {SKIP_REASONS.map((r) => (
                     <option key={r}>{r}</option>
                   ))}
@@ -154,7 +176,11 @@ export function DoseCard({ dose }: { dose: DoseCardData }) {
               <SubmitButton variant="secondary" pendingLabel="Saving…">
                 Confirm skip
               </SubmitButton>
-              <button type="button" onClick={() => setSkipping(false)} className="min-h-11 rounded-xl px-3 text-ink-2 hover:bg-paper-2">
+              <button
+                type="button"
+                onClick={() => setSkipping(false)}
+                className="min-h-11 rounded-xl px-3 text-ink-2 hover:bg-paper-2"
+              >
                 Cancel
               </button>
             </form>

@@ -20,7 +20,10 @@ export function escapeHtml(value: string): string {
 
 /** Strips CR/LF so user text can never inject extra email headers via the subject. */
 export function safeSubject(value: string): string {
-  return value.replace(/[\r\n]+/g, " ").trim().slice(0, 160);
+  return value
+    .replace(/[\r\n]+/g, " ")
+    .trim()
+    .slice(0, 160);
 }
 
 type Tone = "info" | "warn" | "alert" | "good";
@@ -136,7 +139,9 @@ export function doseUpcomingEmail(w: Who & { time: string; doses: DoseLine[] }):
 export function doseNudgeEmail(w: Who & { time: string; doses: DoseLine[]; minutesLate: number }): RenderedEmail {
   return layout({
     tone: "warn",
-    subject: w.toElder ? `Did you take your ${w.time} medicines?` : `${w.elderName}'s ${w.time} dose isn't confirmed yet`,
+    subject: w.toElder
+      ? `Did you take your ${w.time} medicines?`
+      : `${w.elderName}'s ${w.time} dose isn't confirmed yet`,
     preheader: `Not confirmed ${w.minutesLate} minutes after it was due`,
     greeting: `Hello ${w.recipientName},`,
     heading: w.toElder ? "Just checking in" : `${w.elderName}'s ${w.time} dose isn't confirmed`,
@@ -165,7 +170,15 @@ export function doseMissedEmail(w: Who & { time: string; doses: DoseLine[] }): R
 }
 
 export function appointmentEmail(
-  w: Who & { stage: "DAY_BEFORE" | "SOON"; title: string; when: string; doctor: string; location: string; questions: string[]; transport: string },
+  w: Who & {
+    stage: "DAY_BEFORE" | "SOON";
+    title: string;
+    when: string;
+    doctor: string;
+    location: string;
+    questions: string[];
+    transport: string;
+  },
 ): RenderedEmail {
   const items: EmailItem[] = [
     { title: w.when, detail: [w.doctor, w.location].filter(Boolean).join(" · ") },
@@ -201,7 +214,15 @@ export function refillEmail(w: Who & { medicine: string; daysLeft: number; runsO
 }
 
 export function dailyDigestEmail(
-  w: Who & { date: string; taken: number; due: number; missed: string[]; upcoming: string[]; lowStock: string[]; readings?: string[] },
+  w: Who & {
+    date: string;
+    taken: number;
+    due: number;
+    missed: string[];
+    upcoming: string[];
+    lowStock: string[];
+    readings?: string[];
+  },
 ): RenderedEmail {
   const rate = w.due === 0 ? null : Math.round((w.taken / w.due) * 100);
   const items: EmailItem[] = [
@@ -217,14 +238,23 @@ export function dailyDigestEmail(
     preheader: w.missed.length ? `${w.missed.length} missed today` : "All on track today",
     greeting: `Hello ${w.recipientName},`,
     heading: `${w.elderName}'s day, ${w.date}`,
-    intro: w.missed.length ? "A quick summary — a couple of things may need a check-in." : "A quick summary — everything is on track.",
+    intro: w.missed.length
+      ? "A quick summary — a couple of things may need a check-in."
+      : "A quick summary — everything is on track.",
     items,
     cta: { label: "Open Saathi", url: `${w.appUrl}/app` },
   });
 }
 
 export function vitalAlertEmail(
-  w: Who & { check: string; reading: string; flag: "LOW" | "HIGH" | "URGENT"; advice: string; loggedBy: string; when: string },
+  w: Who & {
+    check: string;
+    reading: string;
+    flag: "LOW" | "HIGH" | "URGENT";
+    advice: string;
+    loggedBy: string;
+    when: string;
+  },
 ): RenderedEmail {
   const word = w.flag === "URGENT" ? "Urgent" : w.flag === "HIGH" ? "High" : "Low";
   return layout({
@@ -247,7 +277,9 @@ export function routineUpcomingEmail(w: Who & { time: string; routines: string[]
     preheader: w.routines.join(", "),
     greeting: `Hello ${w.recipientName},`,
     heading: w.toElder ? `Time for your ${w.time} routine` : `${w.elderName}'s ${w.time} routine`,
-    intro: w.toElder ? "A gentle reminder. Record it in Saathi when it's done — for checks, type in the reading." : `${w.elderName} has this routine coming up.`,
+    intro: w.toElder
+      ? "A gentle reminder. Record it in Saathi when it's done — for checks, type in the reading."
+      : `${w.elderName} has this routine coming up.`,
     items: w.routines.map((r) => ({ title: r })),
     cta: { label: "Open today", url: `${w.appUrl}/app` },
   });
@@ -272,7 +304,8 @@ export function testEmail(w: { recipientName: string; appUrl: string }): Rendere
     preheader: "Your reminders will arrive like this",
     greeting: `Hello ${w.recipientName},`,
     heading: "Email delivery is working",
-    intro: "This is how Saathi reminders will look in your inbox. If it landed in spam, mark it as 'not spam' so real reminders are never missed.",
+    intro:
+      "This is how Saathi reminders will look in your inbox. If it landed in spam, mark it as 'not spam' so real reminders are never missed.",
     cta: { label: "Open Saathi", url: `${w.appUrl}/app` },
   });
 }

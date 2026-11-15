@@ -1,5 +1,9 @@
 import { DateTime } from "luxon";
 
+export const MINUTE_MS = 60_000;
+export const HOUR_MS = 60 * MINUTE_MS;
+export const DAY_MS = 24 * HOUR_MS;
+
 /** Matches a 24-hour "HH:MM" clock time. */
 export const CLOCK_TIME = /^([01]\d|2[0-3]):([0-5]\d)$/;
 

@@ -12,7 +12,11 @@ const SIZES = [
 export function DisplayControls({ prefs }: { prefs: DisplayPrefs }) {
   return (
     <div className="flex items-center gap-2">
-      <form action={setDisplayPrefs} className="flex rounded-xl border border-line bg-surface p-0.5" aria-label="Text size">
+      <form
+        action={setDisplayPrefs}
+        className="flex rounded-xl border border-line bg-surface p-0.5"
+        aria-label="Text size"
+      >
         {SIZES.map((s) => (
           <button
             key={s.value}

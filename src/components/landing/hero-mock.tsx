@@ -28,7 +28,17 @@ export function HeroMock() {
           <div className="relative grid size-16 place-items-center">
             <svg viewBox="0 0 64 64" className="size-16 -rotate-90">
               <circle cx="32" cy="32" r="27" fill="none" stroke="var(--color-paper-3)" strokeWidth="7" />
-              <circle cx="32" cy="32" r="27" fill="none" stroke="var(--color-sage)" strokeWidth="7" strokeLinecap="round" strokeDasharray="169.6" strokeDashoffset="56" />
+              <circle
+                cx="32"
+                cy="32"
+                r="27"
+                fill="none"
+                stroke="var(--color-sage)"
+                strokeWidth="7"
+                strokeLinecap="round"
+                strokeDasharray="169.6"
+                strokeDashoffset="56"
+              />
             </svg>
             <span className="absolute font-serif text-lg">2/3</span>
           </div>
@@ -44,7 +54,9 @@ export function HeroMock() {
               <span className="w-16 shrink-0 text-xs font-semibold text-ink-3">{r.time}</span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold">{r.name}</span>
-                <span className={`block truncate text-xs ${r.state === "later" ? "text-amber-700" : "text-ink-2"}`}>{r.note}</span>
+                <span className={`block truncate text-xs ${r.state === "later" ? "text-amber-700" : "text-ink-2"}`}>
+                  {r.note}
+                </span>
               </span>
               {r.state === "taken" && (
                 <span className="check-draw grid size-8 place-items-center rounded-full bg-sage-100 text-sage-700">
@@ -52,7 +64,10 @@ export function HeroMock() {
                 </span>
               )}
               {r.state === "live" && (
-                <span className="rounded-lg px-3 py-1.5 text-xs font-bold [animation:demo-tick_5s_ease_infinite]" style={{ border: "1px solid var(--color-line)" }}>
+                <span
+                  className="rounded-lg px-3 py-1.5 text-xs font-bold [animation:demo-tick_5s_ease_infinite]"
+                  style={{ border: "1px solid var(--color-line)" }}
+                >
                   Taken
                 </span>
               )}

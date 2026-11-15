@@ -5,8 +5,9 @@ import { requireMember } from "@/lib/server/session";
 import { getTodayView } from "@/lib/server/queries";
 import { can } from "@/lib/domain/permissions";
 import { formatClock, greetingFor, localClock } from "@/lib/domain/time";
+import { logWindowError } from "@/lib/domain/schedule";
 import { formatDose, pluralise } from "@/lib/domain/format";
-import { FOOD_TIMING_LABEL, type FoodTiming } from "@/lib/domain/types";
+import { foodTimingLabel } from "@/lib/domain/types";
 import { DoseCard, type DoseCardData } from "@/components/app/dose-card";
 import { RoutineCard } from "@/components/app/routine-card";
 import { formatReading, ROUTINE_KIND_LABEL } from "@/lib/domain/vitals";
@@ -35,7 +36,7 @@ export default async function TodayPage() {
     name: d.med.name,
     strength: d.med.strength,
     doseLabel: formatDose(d.med.doseQuantity, d.med.doseUnit),
-    foodLabel: d.med.foodTiming === "ANY" ? "" : FOOD_TIMING_LABEL[d.med.foodTiming as FoodTiming],
+    foodLabel: foodTimingLabel(d.med.foodTiming),
     instructions: d.med.instructions,
     appearance: d.med.appearance,
     pillColor: d.med.pillColor,
@@ -43,7 +44,7 @@ export default async function TodayPage() {
     loggedBy: d.loggedBy,
     actedLabel: d.actedAt ? formatClock(localClock(d.actedAt, zone)) : null,
     note: d.note,
-    canLog: d.scheduledFor.getTime() - now.getTime() <= 3 * 3_600_000,
+    canLog: logWindowError(d.scheduledFor, now) !== "too-early",
     canAct: canLog,
   });
 
@@ -56,8 +57,15 @@ export default async function TodayPage() {
     total === 0
       ? "There are no medicines scheduled today."
       : `${summary.taken} of ${total} medicines have been taken${summary.missed ? `, and ${summary.missed} ${summary.missed === 1 ? "is" : "are"} overdue or missed` : ""}.`,
-    view.routines.some((r) => r.status === null) ? `Still to do today: ${view.routines.filter((r) => r.status === null).map((r) => r.title).join(", ")}.` : "",
-    next ? `Next: ${next.med.name} ${next.med.strength}, ${formatDose(next.med.doseQuantity, next.med.doseUnit)}, at ${formatClock(next.localTime)}${next.med.foodTiming !== "ANY" ? `, ${FOOD_TIMING_LABEL[next.med.foodTiming as FoodTiming].toLowerCase()}` : ""}.` : "",
+    view.routines.some((r) => r.status === null)
+      ? `Still to do today: ${view.routines
+          .filter((r) => r.status === null)
+          .map((r) => r.title)
+          .join(", ")}.`
+      : "",
+    next
+      ? `Next: ${next.med.name} ${next.med.strength}, ${formatDose(next.med.doseQuantity, next.med.doseUnit)}, at ${formatClock(next.localTime)}${foodTimingLabel(next.med.foodTiming) ? `, ${foodTimingLabel(next.med.foodTiming).toLowerCase()}` : ""}.`
+      : "",
     view.appointments[0]
       ? `Your next appointment is ${view.appointments[0].title}, ${DateTime.fromJSDate(view.appointments[0].startsAt, { zone }).toFormat("cccc 'at' h:mm a")}.`
       : "",
@@ -89,7 +97,10 @@ export default async function TodayPage() {
           </div>
         </div>
         <Card className="flex items-center gap-5 p-5">
-          <ProgressRing value={summary.rate} label={summary.rate === null ? "Nothing due yet today" : `${summary.rate}% of due doses taken today`} />
+          <ProgressRing
+            value={summary.rate}
+            label={summary.rate === null ? "Nothing due yet today" : `${summary.rate}% of due doses taken today`}
+          />
           <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
             <dt className="text-ink-2">Taken</dt>
             <dd className="font-semibold text-sage-700">{summary.taken}</dd>
@@ -114,7 +125,8 @@ export default async function TodayPage() {
           {view.requests.map((r) => (
             <Card key={r.id} className="border-marigold-200 bg-marigold-50 p-5">
               <p className="flex items-center gap-2 text-xs font-semibold tracking-widest text-marigold-800 uppercase">
-                <Icon name="heart" className="size-4" /> {isElder ? "Waiting for your OK" : `Waiting for ${profile.preferredName}'s OK`}
+                <Icon name="heart" className="size-4" />{" "}
+                {isElder ? "Waiting for your OK" : `Waiting for ${profile.preferredName}'s OK`}
               </p>
               <p className="mt-1.5 font-serif text-2xl leading-snug">
                 {r.requestedBy.name} suggested: {r.summary}
@@ -124,21 +136,35 @@ export default async function TodayPage() {
             </Card>
           ))}
           {view.findings.slice(0, 2).map((f) => (
-            <Link key={f.id} href="/app/medications#safety" className="card flex items-start gap-3 border-amber-100 p-4 hover:border-amber">
-              <Icon name="shield" className={`mt-0.5 size-5 ${f.severity === "high" ? "text-rose-700" : "text-amber-700"}`} />
+            <Link
+              key={f.id}
+              href="/app/medications#safety"
+              className="card flex items-start gap-3 border-amber-100 p-4 hover:border-amber"
+            >
+              <Icon
+                name="shield"
+                className={`mt-0.5 size-5 ${f.severity === "high" ? "text-rose-700" : "text-amber-700"}`}
+              />
               <span>
                 <span className="font-semibold">{f.title}</span>
-                <span className="block text-sm text-ink-2">{f.medications.join(" + ")} — tap to read the safety check</span>
+                <span className="block text-sm text-ink-2">
+                  {f.medications.join(" + ")} — tap to read the safety check
+                </span>
               </span>
             </Link>
           ))}
           {view.refills.map(({ med, forecast }) => (
-            <Link key={med.id} href={`/app/medications/${med.id}`} className="card flex items-start gap-3 p-4 hover:border-sky-300">
+            <Link
+              key={med.id}
+              href={`/app/medications/${med.id}`}
+              className="card flex items-start gap-3 p-4 hover:border-sky-300"
+            >
               <Icon name="box" className="mt-0.5 size-5 text-amber-700" />
               <span>
                 <span className="font-semibold">Refill {med.name} soon</span>
                 <span className="block text-sm text-ink-2">
-                  {pluralise(med.stockCount ?? 0, med.doseUnit)} left · about {pluralise(forecast.daysLeft ?? 0, "day")} of supply
+                  {pluralise(med.stockCount ?? 0, med.doseUnit)} left · about {pluralise(forecast.daysLeft ?? 0, "day")}{" "}
+                  of supply
                 </span>
               </span>
             </Link>
@@ -224,7 +250,7 @@ export default async function TodayPage() {
                     readingText: formatReading(r.kind, r.reading),
                     flag: r.flag,
                     loggedBy: r.loggedBy,
-                    canLog: r.scheduledFor.getTime() - now.getTime() <= 3 * 3_600_000,
+                    canLog: logWindowError(r.scheduledFor, now) !== "too-early",
                     canAct: canLog,
                   }}
                 />

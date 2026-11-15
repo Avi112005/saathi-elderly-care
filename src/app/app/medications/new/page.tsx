@@ -12,11 +12,16 @@ export const metadata: Metadata = { title: "Add medicine" };
 export default async function NewMedicationPage() {
   const member = await requireMember();
   if (!can(member, "medication:edit")) redirect("/app/medications");
-  const hasElder = (await prisma.member.count({ where: { profileId: member.profileId, role: "ELDER", active: true } })) > 0;
+  const hasElder =
+    (await prisma.member.count({ where: { profileId: member.profileId, role: "ELDER", active: true } })) > 0;
 
   return (
     <>
-      <PageHeader eyebrow="Medicines" title="Add a medicine" description="Fill it in once from the prescription or the strip. Saathi works out every dose from here." />
+      <PageHeader
+        eyebrow="Medicines"
+        title="Add a medicine"
+        description="Fill it in once from the prescription or the strip. Saathi works out every dose from here."
+      />
       <div className="card p-5 sm:p-8">
         <MedicationForm
           consentRequired={requiresConsent(member, member.profile.consentMode, hasElder)}

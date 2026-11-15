@@ -4,7 +4,13 @@ import { Caveat, Figtree, Instrument_Serif } from "next/font/google";
 import { A11Y_COOKIE, parseA11y } from "@/lib/a11y";
 import "./globals.css";
 
-const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-instrument", display: "swap" });
+const serif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-instrument",
+  display: "swap",
+});
 const sans = Figtree({ subsets: ["latin"], variable: "--font-figtree", display: "swap" });
 const hand = Caveat({ subsets: ["latin"], weight: ["500", "700"], variable: "--font-caveat", display: "swap" });
 

@@ -5,8 +5,11 @@
  * targets for the person always take priority.
  */
 
+import { oneOf } from "./types";
+
 export const ROUTINE_KINDS = ["ACTIVITY", "BLOOD_PRESSURE", "BLOOD_SUGAR", "PULSE", "WEIGHT"] as const;
 export type RoutineKind = (typeof ROUTINE_KINDS)[number];
+export const toRoutineKind = (value: string): RoutineKind => oneOf(ROUTINE_KINDS, value, "ACTIVITY");
 
 export const ROUTINE_KIND_LABEL: Record<RoutineKind, string> = {
   ACTIVITY: "Activity or habit",
@@ -35,6 +38,7 @@ export const READING_RANGE = {
 
 export const VITAL_FLAGS = ["NORMAL", "LOW", "HIGH", "URGENT"] as const;
 export type VitalFlag = (typeof VITAL_FLAGS)[number];
+export const toVitalFlag = (value: string | null | undefined): VitalFlag => oneOf(VITAL_FLAGS, value, "NORMAL");
 
 export const ROUTINE_STATUSES = ["DONE", "SKIPPED"] as const;
 export type RoutineStatus = (typeof ROUTINE_STATUSES)[number];
@@ -62,23 +66,58 @@ export function assessReading(kind: RoutineKind, r: Reading): Assessment {
     case "BLOOD_PRESSURE": {
       const sys = r.systolic ?? 0;
       const dia = r.diastolic ?? 0;
-      if (sys >= 180 || dia >= 120) return { flag: "URGENT", message: "Very high — in the hypertensive-crisis range. Re-check after 5 minutes of rest and contact a doctor now if it stays this high." };
-      if (sys >= 140 || dia >= 90) return { flag: "HIGH", message: "Higher than the usual target. Re-check after resting; mention it to the doctor if it keeps happening." };
-      if (sys < 90 || dia < 60) return { flag: "LOW", message: "Lower than usual. Sit or lie down, drink some water, and watch for dizziness." };
+      if (sys >= 180 || dia >= 120)
+        return {
+          flag: "URGENT",
+          message:
+            "Very high — in the hypertensive-crisis range. Re-check after 5 minutes of rest and contact a doctor now if it stays this high.",
+        };
+      if (sys >= 140 || dia >= 90)
+        return {
+          flag: "HIGH",
+          message:
+            "Higher than the usual target. Re-check after resting; mention it to the doctor if it keeps happening.",
+        };
+      if (sys < 90 || dia < 60)
+        return {
+          flag: "LOW",
+          message: "Lower than usual. Sit or lie down, drink some water, and watch for dizziness.",
+        };
       return { flag: "NORMAL", message: "In the usual range." };
     }
     case "BLOOD_SUGAR": {
       const v = r.value ?? 0;
-      if (v < 54) return { flag: "URGENT", message: "Dangerously low. Take 15 g of fast sugar (juice, glucose tablets) now and re-check in 15 minutes." };
-      if (v < 70) return { flag: "LOW", message: "Low. Have something sweet, re-check in 15 minutes, and don't skip the next meal." };
+      if (v < 54)
+        return {
+          flag: "URGENT",
+          message: "Dangerously low. Take 15 g of fast sugar (juice, glucose tablets) now and re-check in 15 minutes.",
+        };
+      if (v < 70)
+        return {
+          flag: "LOW",
+          message: "Low. Have something sweet, re-check in 15 minutes, and don't skip the next meal.",
+        };
       if (v > 300) return { flag: "URGENT", message: "Very high. Drink water and contact the doctor today." };
-      if (v > 180) return { flag: "HIGH", message: "Higher than the usual target. Note what was eaten and mention it at the next visit." };
+      if (v > 180)
+        return {
+          flag: "HIGH",
+          message: "Higher than the usual target. Note what was eaten and mention it at the next visit.",
+        };
       return { flag: "NORMAL", message: "In the usual range." };
     }
     case "PULSE": {
       const v = r.value ?? 0;
-      if (v < 40 || v > 130) return { flag: "URGENT", message: "Far outside the usual range. Rest, re-check, and contact a doctor now if it persists or there is chest pain or faintness." };
-      if (v < 50) return { flag: "LOW", message: "Slower than usual. Fine for some people — mention it if there is tiredness or dizziness." };
+      if (v < 40 || v > 130)
+        return {
+          flag: "URGENT",
+          message:
+            "Far outside the usual range. Rest, re-check, and contact a doctor now if it persists or there is chest pain or faintness.",
+        };
+      if (v < 50)
+        return {
+          flag: "LOW",
+          message: "Slower than usual. Fine for some people — mention it if there is tiredness or dizziness.",
+        };
       if (v > 100) return { flag: "HIGH", message: "Faster than usual. Rest for 5 minutes and re-check." };
       return { flag: "NORMAL", message: "In the usual range." };
     }

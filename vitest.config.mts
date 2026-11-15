@@ -6,7 +6,9 @@ import { defineConfig } from "vitest/config";
  * URL to run the same suite against Postgres; each run gets its own fresh schema.
  */
 const pgBase = process.env.TEST_DATABASE_URL;
-const testDatabaseUrl = pgBase ? `${pgBase}${pgBase.includes("?") ? "&" : "?"}schema=test_${Date.now()}` : "file:./test.db";
+const testDatabaseUrl = pgBase
+  ? `${pgBase}${pgBase.includes("?") ? "&" : "?"}schema=test_${Date.now()}`
+  : "file:./test.db";
 
 export default defineConfig({
   resolve: {

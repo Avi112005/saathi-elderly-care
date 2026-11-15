@@ -19,7 +19,15 @@ interface FieldProps {
 }
 
 /** Label + control + hint + error, wired together with ids for screen readers. */
-function FieldShell({ label, hint, errors, required, className = "", id, children }: FieldProps & { id: string; children: ReactNode }) {
+function FieldShell({
+  label,
+  hint,
+  errors,
+  required,
+  className = "",
+  id,
+  children,
+}: FieldProps & { id: string; children: ReactNode }) {
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
       <label htmlFor={id} className="text-sm font-semibold text-ink">
@@ -52,7 +60,15 @@ function describedBy(id: string, hint: unknown, errors?: string[]) {
   return hint ? `${id}-hint` : undefined;
 }
 
-export function TextField({ label, name, hint, errors, required, className, ...props }: FieldProps & Omit<ComponentProps<"input">, "name">) {
+export function TextField({
+  label,
+  name,
+  hint,
+  errors,
+  required,
+  className,
+  ...props
+}: FieldProps & Omit<ComponentProps<"input">, "name">) {
   const id = useId();
   return (
     <FieldShell id={id} label={label} name={name} hint={hint} errors={errors} required={required} className={className}>
@@ -69,7 +85,15 @@ export function TextField({ label, name, hint, errors, required, className, ...p
   );
 }
 
-export function TextArea({ label, name, hint, errors, required, className, ...props }: FieldProps & Omit<ComponentProps<"textarea">, "name">) {
+export function TextArea({
+  label,
+  name,
+  hint,
+  errors,
+  required,
+  className,
+  ...props
+}: FieldProps & Omit<ComponentProps<"textarea">, "name">) {
   const id = useId();
   return (
     <FieldShell id={id} label={label} name={name} hint={hint} errors={errors} required={required} className={className}>
@@ -116,7 +140,14 @@ export function SelectField({
             </option>
           ))}
         </select>
-        <svg aria-hidden="true" viewBox="0 0 24 24" className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-ink-2" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-ink-2"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
           <path d="m6 9 6 6 6-6" />
         </svg>
       </div>
@@ -124,7 +155,13 @@ export function SelectField({
   );
 }
 
-export function Checkbox({ label, name, description, defaultChecked, ...props }: { label: string; name: string; description?: string } & Omit<ComponentProps<"input">, "name" | "type">) {
+export function Checkbox({
+  label,
+  name,
+  description,
+  defaultChecked,
+  ...props
+}: { label: string; name: string; description?: string } & Omit<ComponentProps<"input">, "name" | "type">) {
   const id = useId();
   return (
     <div className="flex items-start gap-3 rounded-xl border border-line bg-surface p-3.5 has-[:checked]:border-sky-300 has-[:checked]:bg-sky-50">
@@ -163,10 +200,22 @@ export function SubmitButton({
 }: ComponentProps<"button"> & { pendingLabel?: string; variant?: ButtonVariant; size?: ButtonSize; icon?: IconName }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" variant={variant} size={size} icon={pending ? undefined : icon} disabled={pending || props.disabled} aria-disabled={pending} className={className} {...props}>
+    <Button
+      type="submit"
+      variant={variant}
+      size={size}
+      icon={pending ? undefined : icon}
+      disabled={pending || props.disabled}
+      aria-disabled={pending}
+      className={className}
+      {...props}
+    >
       {pending ? (
         <>
-          <span aria-hidden="true" className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          <span
+            aria-hidden="true"
+            className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+          />
           {pendingLabel}
         </>
       ) : (
@@ -198,7 +247,11 @@ export function FormMessage({ state, className = "" }: { state: ActionState; cla
   if (state.status === "idle" || !state.message) return <div ref={ref} aria-live="polite" className="sr-only" />;
   const style = MESSAGE_STYLE[state.status];
   return (
-    <div ref={ref} role={state.status === "success" ? "status" : "alert"} className={`flex items-start gap-2.5 rounded-xl border px-4 py-3 text-[0.95rem] ${style.cls} ${className}`}>
+    <div
+      ref={ref}
+      role={state.status === "success" ? "status" : "alert"}
+      className={`flex items-start gap-2.5 rounded-xl border px-4 py-3 text-[0.95rem] ${style.cls} ${className}`}
+    >
       <Icon name={style.icon} className="mt-0.5 size-5" />
       <span>{state.message}</span>
     </div>

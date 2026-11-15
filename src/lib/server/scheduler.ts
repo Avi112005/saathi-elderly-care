@@ -2,9 +2,12 @@ import { prisma } from "./db";
 import { runReminderSweep } from "./reminders";
 import { purgeExpired } from "./housekeeping";
 import { getMailer } from "@/lib/email/mailer";
+import { HOUR_MS, MINUTE_MS } from "@/lib/domain/time";
 
-const INTERVAL_MS = 60_000;
-const state = globalThis as unknown as { __saathiScheduler?: { timer: NodeJS.Timeout; running: boolean; lastPurge: number } };
+const INTERVAL_MS = MINUTE_MS;
+const state = globalThis as unknown as {
+  __saathiScheduler?: { timer: NodeJS.Timeout; running: boolean; lastPurge: number };
+};
 
 /**
  * In-process scheduler for long-running Node deployments. Runs one sweep a minute and
@@ -20,13 +23,15 @@ export function startReminderScheduler(): void {
     try {
       const r = await runReminderSweep({ db: prisma, mailer: getMailer() });
       // Housekeeping once an hour is plenty.
-      if (Date.now() - s.lastPurge > 3_600_000) {
+      if (Date.now() - s.lastPurge > HOUR_MS) {
         s.lastPurge = Date.now();
         await purgeExpired(prisma);
       }
       const sent = r.emails.SENT + r.emails.LOGGED;
       if (sent > 0 || r.markedMissed > 0 || r.emails.FAILED > 0) {
-        console.info(`[reminders] ${sent} email(s), ${r.markedMissed} dose(s) marked missed, ${r.emails.FAILED} failed`);
+        console.info(
+          `[reminders] ${sent} email(s), ${r.markedMissed} dose(s) marked missed, ${r.emails.FAILED} failed`,
+        );
       }
     } catch (err) {
       console.error("[reminders] sweep failed", err);

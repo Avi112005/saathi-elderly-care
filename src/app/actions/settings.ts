@@ -12,7 +12,13 @@ import { logActivity } from "@/lib/server/audit";
 import { runReminderSweep } from "@/lib/server/reminders";
 import { appUrl, deliver, getMailer } from "@/lib/email/mailer";
 import { testEmail } from "@/lib/email/templates";
-import { changePinSchema, fieldErrors, formToObject, memberSettingsSchema, profileSchema } from "@/lib/validation/schemas";
+import {
+  changePinSchema,
+  fieldErrors,
+  formToObject,
+  memberSettingsSchema,
+  profileSchema,
+} from "@/lib/validation/schemas";
 import { A11Y_COOKIE, parseA11y, serializeA11y } from "@/lib/a11y";
 import { fail, ok, type ActionState } from "@/lib/actions";
 
@@ -22,7 +28,12 @@ export async function updateMySettings(_prev: ActionState, form: FormData): Prom
     const parsed = memberSettingsSchema.safeParse(formToObject(form));
     if (!parsed.success) return fail("Some settings need fixing.", fieldErrors(parsed.error));
     await prisma.member.update({ where: { id: me.id }, data: parsed.data });
-    await logActivity({ profileId: me.profileId, actorId: me.id, action: "member.settings", summary: `${parsed.data.name} updated their notification settings` });
+    await logActivity({
+      profileId: me.profileId,
+      actorId: me.id,
+      action: "member.settings",
+      summary: `${parsed.data.name} updated their notification settings`,
+    });
     revalidatePath("/app", "layout");
     return ok("Saved");
   });
@@ -39,8 +50,15 @@ export async function changePin(_prev: ActionState, form: FormData): Promise<Act
     }
     await prisma.member.update({ where: { id: me.id }, data: { passcodeHash: await hashPasscode(parsed.data.pin) } });
     const revoked = await revokeOtherSessions(me.id);
-    await logActivity({ profileId: me.profileId, actorId: me.id, action: "security.pin", summary: `${me.name} changed their PIN` });
-    return ok(`PIN changed.${revoked ? ` Signed out ${revoked} other device${revoked === 1 ? "" : "s"}.` : ""} Use the new PIN next time you sign in.`);
+    await logActivity({
+      profileId: me.profileId,
+      actorId: me.id,
+      action: "security.pin",
+      summary: `${me.name} changed their PIN`,
+    });
+    return ok(
+      `PIN changed.${revoked ? ` Signed out ${revoked} other device${revoked === 1 ? "" : "s"}.` : ""} Use the new PIN next time you sign in.`,
+    );
   });
 }
 
@@ -54,7 +72,12 @@ export async function updateProfile(_prev: ActionState, form: FormData): Promise
       where: { id: me.profileId },
       data: { ...rest, dateOfBirth: dateOfBirth ? new Date(`${dateOfBirth}T00:00:00Z`) : null },
     });
-    await logActivity({ profileId: me.profileId, actorId: me.id, action: "profile.updated", summary: `${me.name} updated ${rest.preferredName}'s health profile` });
+    await logActivity({
+      profileId: me.profileId,
+      actorId: me.id,
+      action: "profile.updated",
+      summary: `${me.name} updated ${rest.preferredName}'s health profile`,
+    });
     revalidatePath("/app", "layout");
     return ok("Health profile saved");
   });
@@ -64,7 +87,8 @@ export async function sendTestEmail(_prev: ActionState): Promise<ActionState> {
   return guarded(async () => {
     const me = await authorize("view");
     if (!me.email) return fail("Add your email address in Settings first.");
-    if (!limiters.email.check(`email:${me.id}`).allowed) return fail("Please wait a few minutes before sending another.");
+    if (!limiters.email.check(`email:${me.id}`).allowed)
+      return fail("Please wait a few minutes before sending another.");
     const outcome = await deliver(prisma, getMailer(), {
       profileId: me.profileId,
       memberId: me.id,
@@ -75,7 +99,8 @@ export async function sendTestEmail(_prev: ActionState): Promise<ActionState> {
     });
     revalidatePath("/app/outbox");
     if (outcome === "SENT") return ok(`Sent to ${me.email}. Check your inbox.`);
-    if (outcome === "LOGGED") return ok("SMTP isn't configured, so the email was written to the Outbox instead of being sent.");
+    if (outcome === "LOGGED")
+      return ok("SMTP isn't configured, so the email was written to the Outbox instead of being sent.");
     return fail("The email server rejected the message. See the Outbox for details.");
   });
 }
@@ -115,7 +140,8 @@ export async function deleteCircle(_prev: ActionState, form: FormData): Promise<
   return guarded(async () => {
     const me = await authorize("profile:edit");
     const typed = String(form.get("confirm") ?? "").trim();
-    if (typed !== me.profile.preferredName) return fail(`Type "${me.profile.preferredName}" exactly to confirm.`, { confirm: ["Name does not match"] });
+    if (typed !== me.profile.preferredName)
+      return fail(`Type "${me.profile.preferredName}" exactly to confirm.`, { confirm: ["Name does not match"] });
     if (me.profile.isDemo) return fail("The demo circle can't be deleted.");
     await prisma.careProfile.delete({ where: { id: me.profileId } });
     await destroySession();

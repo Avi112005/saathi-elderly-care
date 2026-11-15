@@ -3,7 +3,21 @@ import type { ReactNode } from "react";
 import { Logo } from "@/components/ui/logo";
 
 /** Centred card on ruled paper, shared by every sign-in / sign-up screen. */
-export function AuthShell({ title, eyebrow, description, children, footer, wide = false }: { title: ReactNode; eyebrow?: string; description?: ReactNode; children: ReactNode; footer?: ReactNode; wide?: boolean }) {
+export function AuthShell({
+  title,
+  eyebrow,
+  description,
+  children,
+  footer,
+  wide = false,
+}: {
+  title: ReactNode;
+  eyebrow?: string;
+  description?: ReactNode;
+  children: ReactNode;
+  footer?: ReactNode;
+  wide?: boolean;
+}) {
   return (
     <div className="paper-ruled flex min-h-dvh flex-col">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">

@@ -29,7 +29,11 @@ export async function saveRoutineAction(_prev: ActionState, form: FormData): Pro
 export async function stopRoutineAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   return guarded(async () => {
     const actor = await authorize("routine:edit");
-    const stopped = await stopRoutine(prisma, { profileId: actor.profileId, actorId: actor.id, routineId: String(form.get("id") ?? "") });
+    const stopped = await stopRoutine(prisma, {
+      profileId: actor.profileId,
+      actorId: actor.id,
+      routineId: String(form.get("id") ?? ""),
+    });
     if (!stopped) return fail("Routine not found or already stopped.");
     revalidatePath("/app", "layout");
     return ok("Routine stopped. Past check-ins are kept.");
@@ -40,7 +44,8 @@ export async function logRoutineAction(_prev: ActionState, form: FormData): Prom
   return guarded(async () => {
     const actor = await authorize("dose:log");
     const parsed = routineLogSchema.safeParse(formToObject(form));
-    if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Could not save that.", fieldErrors(parsed.error));
+    if (!parsed.success)
+      return fail(parsed.error.issues[0]?.message ?? "Could not save that.", fieldErrors(parsed.error));
     const result = await recordRoutine(prisma, getMailer(), {
       profileId: actor.profileId,
       timezone: actor.profile.timezone,
@@ -63,7 +68,12 @@ export async function undoRoutineAction(_prev: ActionState, form: FormData): Pro
     const actor = await authorize("dose:log");
     const at = new Date(String(form.get("scheduledFor") ?? ""));
     if (Number.isNaN(at.getTime())) return fail("Could not undo.");
-    await undoRoutine(prisma, { profileId: actor.profileId, actorId: actor.id, routineId: String(form.get("routineId") ?? ""), scheduledFor: at });
+    await undoRoutine(prisma, {
+      profileId: actor.profileId,
+      actorId: actor.id,
+      routineId: String(form.get("routineId") ?? ""),
+      scheduledFor: at,
+    });
     revalidatePath("/app", "layout");
     return ok("Undone");
   });

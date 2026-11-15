@@ -1,7 +1,11 @@
 /** Minimal RFC 5545 calendar export for one appointment (works with Google, Apple and Outlook). */
+import { MINUTE_MS } from "./time";
 
 function stamp(date: Date): string {
-  return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  return date
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}/, "");
 }
 
 /** Escapes text values per RFC 5545 §3.3.11. */
@@ -21,8 +25,11 @@ function fold(line: string): string {
   return out.join("\r\n");
 }
 
-export function buildIcs(a: { id: string; title: string; startsAt: Date; durationMin: number; location: string; description: string }, now: Date = new Date()): string {
-  const end = new Date(a.startsAt.getTime() + a.durationMin * 60_000);
+export function buildIcs(
+  a: { id: string; title: string; startsAt: Date; durationMin: number; location: string; description: string },
+  now: Date = new Date(),
+): string {
+  const end = new Date(a.startsAt.getTime() + a.durationMin * MINUTE_MS);
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",

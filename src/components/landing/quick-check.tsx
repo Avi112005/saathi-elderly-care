@@ -4,9 +4,24 @@ import { useState } from "react";
 import { Icon } from "@/components/ui/icon";
 
 const OPTIONS = [
-  { id: "a", text: "Emails the whole family the moment she's a minute late", correct: false, why: "That would turn every slow morning into a family alarm — and soon everyone stops reading." },
-  { id: "b", text: "Reminds her first, nudges her caretaker after 30 minutes, tells the family after 2 hours", correct: true, why: "Exactly. The elder hears first, the circle widens only when it really matters — and every step is logged." },
-  { id: "c", text: "Nothing — reminders are her own responsibility", correct: false, why: "One missed blood-pressure dose is usually fine. A week of them isn't. Someone should notice." },
+  {
+    id: "a",
+    text: "Emails the whole family the moment she's a minute late",
+    correct: false,
+    why: "That would turn every slow morning into a family alarm — and soon everyone stops reading.",
+  },
+  {
+    id: "b",
+    text: "Reminds her first, nudges her caretaker after 30 minutes, tells the family after 2 hours",
+    correct: true,
+    why: "Exactly. The elder hears first, the circle widens only when it really matters — and every step is logged.",
+  },
+  {
+    id: "c",
+    text: "Nothing — reminders are her own responsibility",
+    correct: false,
+    why: "One missed blood-pressure dose is usually fine. A week of them isn't. Someone should notice.",
+  },
 ] as const;
 
 /** A small interactive quiz, mirroring the "check your understanding" moment in a lesson. */
@@ -23,7 +38,11 @@ export function QuickCheck() {
       <div role="radiogroup" aria-labelledby="quick-check-q" className="mt-5 flex flex-col gap-2.5">
         {OPTIONS.map((o) => {
           const selected = picked === o.id;
-          const state = selected ? (o.correct ? "border-sage bg-sage-100 text-sage-700" : "border-rose bg-rose-100 text-rose-700") : "border-line bg-surface hover:border-sky-300";
+          const state = selected
+            ? o.correct
+              ? "border-sage bg-sage-100 text-sage-700"
+              : "border-rose bg-rose-100 text-rose-700"
+            : "border-line bg-surface hover:border-sky-300";
           return (
             <button
               key={o.id}
@@ -42,7 +61,9 @@ export function QuickCheck() {
       <p aria-live="polite" className="mt-4 min-h-6 text-ink-2">
         {choice ? (
           <>
-            <strong className={choice.correct ? "text-sage-700" : "text-rose-700"}>{choice.correct ? "Right. " : "Not quite. "}</strong>
+            <strong className={choice.correct ? "text-sage-700" : "text-rose-700"}>
+              {choice.correct ? "Right. " : "Not quite. "}
+            </strong>
             {choice.why}
           </>
         ) : null}

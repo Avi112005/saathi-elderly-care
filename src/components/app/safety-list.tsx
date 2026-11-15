@@ -34,7 +34,9 @@ export function SafetyList({ findings }: { findings: SafetyFinding[] }) {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone={t.badge}>{t.label}</Badge>
-                    <span className="text-xs font-semibold tracking-wider text-ink-3 uppercase">{KIND_LABEL[f.kind]}</span>
+                    <span className="text-xs font-semibold tracking-wider text-ink-3 uppercase">
+                      {KIND_LABEL[f.kind]}
+                    </span>
                   </div>
                   <p className="mt-1.5 font-semibold">{f.title}</p>
                   <p className="text-sm text-ink-2">

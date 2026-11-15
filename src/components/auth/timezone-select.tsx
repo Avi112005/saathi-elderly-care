@@ -4,7 +4,17 @@ import { useEffect, useState } from "react";
 import { SelectField } from "@/components/ui/form";
 
 /** Time-zone picker that defaults to the browser's zone after hydration. */
-export function TimezoneSelect({ zones, defaultValue = "Asia/Kolkata", errors, name = "timezone" }: { zones: string[]; defaultValue?: string; errors?: string[]; name?: string }) {
+export function TimezoneSelect({
+  zones,
+  defaultValue = "Asia/Kolkata",
+  errors,
+  name = "timezone",
+}: {
+  zones: string[];
+  defaultValue?: string;
+  errors?: string[];
+  name?: string;
+}) {
   const [value, setValue] = useState(defaultValue);
   useEffect(() => {
     if (defaultValue !== "Asia/Kolkata") return;

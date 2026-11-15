@@ -54,7 +54,9 @@ export default async function OutboxPage({ searchParams }: { searchParams: Promi
             {live ? "Email delivery is live (SMTP connected)" : "Preview mode — SMTP isn't configured"}
           </p>
           <p className="mt-1 text-sm text-ink-2">
-            {live ? "Emails are delivered to each member's inbox." : "Emails are written here instead of being sent. Add SMTP settings to .env to deliver them for real."}
+            {live
+              ? "Emails are delivered to each member's inbox."
+              : "Emails are written here instead of being sent. Add SMTP settings to .env to deliver them for real."}
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:items-end">
@@ -66,33 +68,59 @@ export default async function OutboxPage({ searchParams }: { searchParams: Promi
       {selected && (
         <section aria-labelledby="preview-title" className="mb-8">
           <div className="mb-3 flex items-center justify-between">
-            <h2 id="preview-title" className="text-2xl">{selected.subject}</h2>
-            <Link href="/app/outbox" className="ink-underline text-sm font-semibold">Close preview</Link>
+            <h2 id="preview-title" className="text-2xl">
+              {selected.subject}
+            </h2>
+            <Link href="/app/outbox" className="ink-underline text-sm font-semibold">
+              Close preview
+            </Link>
           </div>
           {/* Sandboxed: no scripts, no same-origin access. Content is also escaped at render time. */}
-          <iframe title={`Email preview: ${selected.subject}`} srcDoc={selected.bodyHtml} sandbox="" className="h-[36rem] w-full rounded-2xl border border-line bg-paper" />
+          <iframe
+            title={`Email preview: ${selected.subject}`}
+            srcDoc={selected.bodyHtml}
+            sandbox=""
+            className="h-[36rem] w-full rounded-2xl border border-line bg-paper"
+          />
         </section>
       )}
 
       {emails.length === 0 ? (
         <Card className="p-6 text-ink-2">No emails yet. They appear as doses and appointments come due.</Card>
       ) : (
-        <div className="card overflow-x-auto" tabIndex={0} role="region" aria-label="Sent emails table (scrolls sideways)">
+        <div
+          className="card overflow-x-auto"
+          tabIndex={0}
+          role="region"
+          aria-label="Sent emails table (scrolls sideways)"
+        >
           <table className="w-full min-w-[40rem] text-left text-sm">
             <caption className="sr-only">Emails sent for this care circle</caption>
             <thead className="border-b border-line bg-paper-2 text-ink-2">
               <tr>
-                <th scope="col" className="px-4 py-3 font-semibold">When</th>
-                <th scope="col" className="px-4 py-3 font-semibold">Type</th>
-                <th scope="col" className="px-4 py-3 font-semibold">Subject</th>
-                <th scope="col" className="px-4 py-3 font-semibold">To</th>
-                <th scope="col" className="px-4 py-3 font-semibold">Status</th>
+                <th scope="col" className="px-4 py-3 font-semibold">
+                  When
+                </th>
+                <th scope="col" className="px-4 py-3 font-semibold">
+                  Type
+                </th>
+                <th scope="col" className="px-4 py-3 font-semibold">
+                  Subject
+                </th>
+                <th scope="col" className="px-4 py-3 font-semibold">
+                  To
+                </th>
+                <th scope="col" className="px-4 py-3 font-semibold">
+                  Status
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {emails.map((e) => (
                 <tr key={e.id} className={e.id === id ? "bg-sky-50" : ""}>
-                  <td className="px-4 py-3 whitespace-nowrap text-ink-2">{DateTime.fromJSDate(e.createdAt, { zone }).toFormat("d LLL, h:mm a")}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-ink-2">
+                    {DateTime.fromJSDate(e.createdAt, { zone }).toFormat("d LLL, h:mm a")}
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap">{KIND_LABEL[e.kind] ?? e.kind}</td>
                   <td className="px-4 py-3">
                     <Link href={`/app/outbox?id=${e.id}#preview-title`} className="ink-underline font-semibold">

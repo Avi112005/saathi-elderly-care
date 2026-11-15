@@ -62,7 +62,8 @@ export type DeliveryResult = "SENT" | "LOGGED" | "FAILED" | "DUPLICATE";
 export async function deliver(db: PrismaClient, mailer: Mailer, out: OutgoingEmail): Promise<DeliveryResult> {
   // Fast path: most sweeps re-see reminders that already went out. The unique insert below
   // remains the real guarantee when two sweeps race.
-  if (await db.notification.findUnique({ where: { dedupeKey: out.dedupeKey }, select: { id: true } })) return "DUPLICATE";
+  if (await db.notification.findUnique({ where: { dedupeKey: out.dedupeKey }, select: { id: true } }))
+    return "DUPLICATE";
   let id: string;
   try {
     const row = await db.notification.create({

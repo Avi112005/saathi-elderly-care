@@ -7,7 +7,11 @@ const noop = () => () => {};
 
 /** Reads a summary aloud with the browser's built-in speech synthesis (no data leaves the device). */
 export function ReadAloud({ text, label = "Read my day aloud" }: { text: string; label?: string }) {
-  const supported = useSyncExternalStore(noop, () => "speechSynthesis" in window, () => false);
+  const supported = useSyncExternalStore(
+    noop,
+    () => "speechSynthesis" in window,
+    () => false,
+  );
   const [speaking, setSpeaking] = useState(false);
 
   useEffect(() => () => window.speechSynthesis?.cancel(), []);

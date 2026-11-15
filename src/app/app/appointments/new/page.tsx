@@ -17,7 +17,18 @@ export default async function NewAppointmentPage() {
       <PageHeader eyebrow="Appointments" title="Add an appointment" />
       <div className="card p-5 sm:p-8">
         <AppointmentForm
-          initial={{ title: "", doctorName: "", specialty: "", location: "", date: tomorrow.toISODate() ?? "", time: "10:00", durationMin: 30, notes: "", questions: "", transport: "" }}
+          initial={{
+            title: "",
+            doctorName: "",
+            specialty: "",
+            location: "",
+            date: tomorrow.toISODate() ?? "",
+            time: "10:00",
+            durationMin: 30,
+            notes: "",
+            questions: "",
+            transport: "",
+          }}
         />
       </div>
     </>

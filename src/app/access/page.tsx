@@ -14,8 +14,14 @@ export default async function AccessPage({ searchParams }: { searchParams: Promi
       description="Enter the circle's care code. Next, you'll choose who you are and type your own PIN."
       footer={
         <>
-          New here? <Link className="ink-underline font-semibold text-ink" href="/start">Create a care circle</Link> · Got an invite?{" "}
-          <Link className="ink-underline font-semibold text-ink" href="/join">Join with it</Link>
+          New here?{" "}
+          <Link className="ink-underline font-semibold text-ink" href="/start">
+            Create a care circle
+          </Link>{" "}
+          · Got an invite?{" "}
+          <Link className="ink-underline font-semibold text-ink" href="/join">
+            Join with it
+          </Link>
         </>
       }
     >
