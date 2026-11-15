@@ -5,7 +5,7 @@
   "description": "Saathi \u2014 a shared care circle for elderly medication, appointment and adherence management with escalating email reminders.",
   "license": "MIT",
   "engines": {
-    "node": ">=20.9.0"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "next dev",
