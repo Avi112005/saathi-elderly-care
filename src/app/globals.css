@@ -1,0 +1,194 @@
+@import "tailwindcss";
+
+/* --------------------------------------------------------------------------
+ * Design tokens — "paper & ink": warm notebook paper, navy ink, sky-blue pen,
+ * marigold highlighter. Text colours are tuned to meet WCAG AA (4.5:1) on paper.
+ * ----------------------------------------------------------------------- */
+@theme {
+  --color-paper: #fbfaf6;
+  --color-paper-2: #f5f3ec;
+  --color-paper-3: #ece9df;
+  --color-surface: #ffffff;
+  --color-rule: #dfe8f4;
+  --color-ink: #1e2942;
+  --color-ink-2: #4a5671;
+  --color-ink-3: #636e86;
+  --color-line: #e7e3d8;
+  --color-line-2: #d8d3c4;
+
+  --color-sky-50: #f0f5fc;
+  --color-sky-100: #dfeaf9;
+  --color-sky-200: #c3d7f2;
+  --color-sky-300: #9cbce8;
+  --color-sky-500: #4c7cc7;
+  --color-sky-600: #3b66ae;
+  --color-sky-700: #2f528c;
+  --color-sky-800: #233f6d;
+
+  --color-marigold-50: #fff9e8;
+  --color-marigold-100: #fdf0cb;
+  --color-marigold-200: #f9e19a;
+  --color-marigold-400: #f0c35a;
+  --color-marigold-600: #c48c18;
+  --color-marigold-800: #7a5508;
+
+  --color-margin: #e5917f;
+  --color-margin-100: #fbe7e2;
+  --color-sage: #5f9474;
+  --color-sage-100: #e3f0e7;
+  --color-sage-700: #3d6b50;
+  --color-amber: #c98f2e;
+  --color-amber-100: #fbf0d9;
+  --color-amber-700: #7f5512;
+  --color-rose: #c96666;
+  --color-rose-100: #f8e2e2;
+  --color-rose-700: #973c3c;
+
+  --font-serif: var(--font-instrument), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-hand: var(--font-caveat), "Segoe Print", cursive;
+
+  --radius-card: 14px;
+  --shadow-soft: 0 1px 0 #1e29420a, 0 2px 10px -4px #1e294214;
+  --shadow-lift: 0 2px 0 #1e294208, 0 18px 40px -18px #1e294240;
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* High-contrast mode: every grey becomes ink, borders get stronger, blue gets darker. */
+:root[data-contrast="high"] {
+  --color-ink-2: #1e2942;
+  --color-ink-3: #1e2942;
+  --color-line: #1e2942;
+  --color-line-2: #1e2942;
+  --color-sky-600: #1d3f7a;
+  --color-sky-700: #142e5c;
+  --color-sage-700: #24452f;
+  --color-rose-700: #6e2020;
+  --color-amber-700: #573a08;
+  --color-paper: #ffffff;
+  --color-paper-2: #ffffff;
+}
+
+/* Larger text for low-vision users — everything is sized in rem, so it all scales. */
+:root[data-text="lg"] { font-size: 112.5%; }
+:root[data-text="xl"] { font-size: 125%; }
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, .font-display {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-sky-500);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  ::selection { background: var(--color-marigold-200); }
+  input, select, textarea, button { font: inherit; }
+  [hidden] { display: none !important; }
+}
+
+@layer components {
+  /* Notebook paper with horizontal rules. */
+  .paper-ruled {
+    background-color: var(--color-paper);
+    background-image: linear-gradient(to bottom, transparent calc(2.5rem - 1px), var(--color-rule) calc(2.5rem - 1px), var(--color-rule) 2.5rem);
+    background-size: 100% 2.5rem;
+  }
+  .dot-grid {
+    background-image: radial-gradient(var(--color-line-2) 1px, transparent 1.2px);
+    background-size: 20px 20px;
+  }
+  /* Marigold highlighter stroke behind a phrase. */
+  .highlight {
+    background-image: linear-gradient(transparent 62%, var(--color-marigold-200) 62%, var(--color-marigold-200) 92%, transparent 92%);
+    padding-inline: 0.08em;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+  .ink-underline {
+    text-decoration: underline;
+    text-decoration-color: var(--color-sky-300);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-soft);
+  }
+  .eyebrow {
+    font-family: var(--font-serif);
+    font-style: italic;
+    color: var(--color-sky-600);
+    font-size: 1.05rem;
+  }
+  .skip-link {
+    position: absolute;
+    left: 1rem;
+    top: -4rem;
+    z-index: 100;
+    background: var(--color-ink);
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    transition: top 0.15s;
+  }
+  .skip-link:focus { top: 1rem; }
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes draw-check {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-8px) rotate(-1deg); }
+}
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgb(201 102 102 / 0.45); }
+  70% { box-shadow: 0 0 0 14px rgb(201 102 102 / 0); }
+  100% { box-shadow: 0 0 0 0 rgb(201 102 102 / 0); }
+}
+@keyframes demo-tick {
+  0%, 35% { background: var(--color-surface); color: var(--color-ink-2); }
+  45%, 100% { background: var(--color-sage-100); color: var(--color-sage-700); }
+}
+
+.animate-rise { animation: rise 0.7s var(--ease-soft) both; }
+.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-pulse-ring { animation: pulse-ring 2.2s infinite; }
+.check-draw path { stroke-dasharray: 24; animation: draw-check 0.5s var(--ease-soft) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+  .card { box-shadow: none; border-color: #999; break-inside: avoid; }
+  a { text-decoration: none; color: inherit; }
+}
